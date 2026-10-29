@@ -7,4 +7,7 @@ export * from "./domain/permissions";
 export * from "./domain/auth";
 export * from "./domain/barcode";
 export * from "./domain/stock";
+export * from "./domain/billing";
+export * from "./domain/discountPolicy";
+export * from "./domain/invoiceNumbering";
 export * from "./storage/sqlDatabase";

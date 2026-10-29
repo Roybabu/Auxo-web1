@@ -1,0 +1,339 @@
+.page {
+  min-height: 100%;
+  padding: var(--space-6);
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+}
+
+.backButton {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.title {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.ghostButton {
+  appearance: none;
+  border: var(--border-width-thin) solid var(--color-border-strong);
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--text-xs);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  min-height: 36px;
+}
+
+.searchBox {
+  position: relative;
+  margin-bottom: var(--space-4);
+}
+
+.searchInput {
+  width: 100%;
+  background: var(--color-surface-2);
+  border: var(--border-width-thin) solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: var(--text-base);
+  padding: var(--space-3);
+  min-height: var(--touch-target-min);
+}
+
+.searchResults {
+  position: absolute;
+  z-index: var(--z-overlay);
+  top: calc(100% + var(--space-2));
+  left: 0;
+  right: 0;
+  background: var(--color-surface-raised);
+  border: var(--border-width-thin) solid var(--color-border);
+  border-radius: var(--radius-md);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.searchResultItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  padding: var(--space-3);
+  cursor: pointer;
+  border-bottom: var(--border-width-thin) solid var(--color-border);
+  font-size: var(--text-sm);
+}
+
+.searchResultItem:hover {
+  background: var(--color-surface-2);
+}
+
+.searchResultMeta {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+}
+
+.emptyCart {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  text-align: center;
+  padding: var(--space-10) 0;
+}
+
+.cartLine {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: var(--border-width-thin) solid var(--color-border);
+}
+
+.cartLineMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.cartLineName {
+  font-weight: var(--weight-medium);
+  margin: 0;
+}
+
+.cartLineMeta {
+  color: var(--color-text-tertiary);
+  font-size: var(--text-xs);
+  margin: 2px 0 0;
+}
+
+.qtyStepper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.stepperButton {
+  appearance: none;
+  border: var(--border-width-thin) solid var(--color-border-strong);
+  background: var(--color-surface-2);
+  color: var(--color-text-primary);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--text-base);
+}
+
+.qtyValue {
+  min-width: 28px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.discountInput {
+  width: 56px;
+  background: var(--color-surface-2);
+  border: var(--border-width-thin) solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-size: var(--text-xs);
+  padding: var(--space-1) var(--space-2);
+  text-align: right;
+}
+
+.lineTotal {
+  font-variant-numeric: tabular-nums;
+  min-width: 80px;
+  text-align: right;
+  font-weight: var(--weight-medium);
+}
+
+.removeButton {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  font-size: var(--text-lg);
+  line-height: 1;
+  padding: var(--space-1);
+}
+
+.summary {
+  margin-top: var(--space-6);
+  background: var(--color-surface-1);
+  border: var(--border-width-thin) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  padding: var(--space-1) 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.summaryRowBold {
+  color: var(--color-text-primary);
+  font-weight: var(--weight-medium);
+}
+
+.grandTotalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: var(--border-width-thin) solid var(--color-border);
+}
+
+.grandTotalLabel {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.grandTotalValue {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.discountRow {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  margin: var(--space-4) 0;
+}
+
+.discountKindSelect,
+.discountValueInput {
+  background: var(--color-surface-2);
+  border: var(--border-width-thin) solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  padding: var(--space-2);
+  min-height: 40px;
+}
+
+.discountValueInput {
+  width: 100px;
+}
+
+.paymentMethods {
+  display: flex;
+  gap: var(--space-2);
+  margin: var(--space-4) 0;
+}
+
+.paymentMethodButton {
+  flex: 1;
+  appearance: none;
+  border: var(--border-width-thin) solid var(--color-border-strong);
+  background: var(--color-surface-2);
+  color: var(--color-text-primary);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  min-height: var(--touch-target-min);
+}
+
+.paymentMethodButtonSelected {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.actionRow {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.primaryButton {
+  flex: 1;
+  appearance: none;
+  border: none;
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-md);
+  min-height: var(--touch-target-min);
+  cursor: pointer;
+}
+
+.primaryButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.secondaryButton {
+  appearance: none;
+  border: var(--border-width-thin) solid var(--color-border-strong);
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius-md);
+  min-height: var(--touch-target-min);
+  cursor: pointer;
+}
+
+.error {
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+  margin: var(--space-2) 0;
+}
+
+.receiptCard {
+  text-align: center;
+  padding: var(--space-10) var(--space-6);
+}
+
+.receiptNumber {
+  font-family: var(--font-mono);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.receiptTotal {
+  font-size: var(--text-4xl);
+  font-weight: var(--weight-semibold);
+  margin: var(--space-4) 0;
+  font-variant-numeric: tabular-nums;
+}

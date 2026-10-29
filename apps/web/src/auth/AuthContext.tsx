@@ -9,7 +9,7 @@ import {
 } from "@auxo/core";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useDatabase } from "../db/DatabaseContext";
-import { ShopRepository, type ShopSettings } from "../db/shopRepository";
+import { DEFAULT_BILLING_SETTINGS, ShopRepository, type ShopSettings } from "../db/shopRepository";
 import { UserRepository } from "../db/userRepository";
 
 export type BootstrapStatus =
@@ -110,16 +110,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       deletedAt: null,
     };
 
+    const shopSettings: ShopSettings = {
+      storeName: input.storeName,
+      categories: input.categories,
+      createdAt: now,
+      ...DEFAULT_BILLING_SETTINGS,
+    };
+
     const userRepo = new UserRepository(db);
     const shopRepo = new ShopRepository(db);
     await userRepo.create(admin);
-    await shopRepo.save({ storeName: input.storeName, categories: input.categories, createdAt: now });
+    await shopRepo.save(shopSettings);
 
     setState({
       status: "awaiting-recovery-ack",
       currentUser: admin,
       users: [admin],
-      shop: { storeName: input.storeName, categories: input.categories, createdAt: now },
+      shop: shopSettings,
       permissions: effectivePermissions(admin.role, new Set(admin.grantedPermissions)),
       error: null,
     });
