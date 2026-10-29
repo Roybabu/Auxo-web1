@@ -15,7 +15,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "aes-js": "^3.1.2"
+    "aes-js": "^3.1.2",
+    "fflate": "^0.8.2"
   },
   "devDependencies": {
     "@types/aes-js": "^3.1.4",
