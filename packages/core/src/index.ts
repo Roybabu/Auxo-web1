@@ -5,4 +5,6 @@ export * from "./backup/backupFile";
 export * from "./domain/entities";
 export * from "./domain/permissions";
 export * from "./domain/auth";
+export * from "./domain/barcode";
+export * from "./domain/stock";
 export * from "./storage/sqlDatabase";

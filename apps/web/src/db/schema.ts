@@ -34,4 +34,79 @@ export async function ensureSchema(db: SqlDatabase): Promise<void> {
       deleted_at INTEGER
     )
   `);
+
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS products (
+      id TEXT PRIMARY KEY,
+      android_id INTEGER,
+      name TEXT NOT NULL,
+      brand TEXT,
+      category TEXT NOT NULL,
+      category_id TEXT,
+      subcategory TEXT,
+      description TEXT,
+      material TEXT,
+      diet_type TEXT,
+      hsn_code TEXT,
+      gst_rule TEXT NOT NULL,
+      stock_unit TEXT NOT NULL DEFAULT 'UNIT',
+      preferred_supplier_id TEXT,
+      photo_file TEXT,
+      available INTEGER NOT NULL DEFAULT 1,
+      tracks_stock INTEGER NOT NULL DEFAULT 1,
+      warranty_months INTEGER,
+      prescription_required INTEGER NOT NULL DEFAULT 0,
+      metal TEXT,
+      making_charge_bp INTEGER,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      deleted_at INTEGER
+    )
+  `);
+
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS product_variants (
+      id TEXT PRIMARY KEY,
+      android_id INTEGER,
+      product_id TEXT NOT NULL REFERENCES products(id),
+      sku TEXT,
+      barcode TEXT,
+      size TEXT,
+      colour TEXT,
+      net_quantity_milli INTEGER,
+      net_quantity_unit TEXT,
+      price_minor INTEGER NOT NULL,
+      mrp_minor INTEGER,
+      cost_minor INTEGER,
+      stock_quantity INTEGER NOT NULL DEFAULT 0,
+      low_stock_threshold INTEGER,
+      reorder_quantity INTEGER,
+      batch_number TEXT,
+      expiry_epoch_day INTEGER,
+      photo_file TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      deleted_at INTEGER
+    )
+  `);
+  await db.exec("CREATE INDEX IF NOT EXISTS idx_product_variants_product_id ON product_variants(product_id)");
+  await db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_product_variants_barcode ON product_variants(barcode) WHERE barcode IS NOT NULL");
+
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS stock_movements (
+      id TEXT PRIMARY KEY,
+      android_id INTEGER,
+      variant_id TEXT NOT NULL REFERENCES product_variants(id),
+      quantity_change INTEGER NOT NULL,
+      reason TEXT NOT NULL,
+      note TEXT,
+      invoice_id TEXT,
+      batch_id TEXT,
+      receipt_id TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      deleted_at INTEGER
+    )
+  `);
+  await db.exec("CREATE INDEX IF NOT EXISTS idx_stock_movements_variant_id ON stock_movements(variant_id)");
 }

@@ -1,14 +1,20 @@
 import { useState } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { InventoryListScreen } from "./InventoryListScreen";
 import { UserManagementScreen } from "./UserManagementScreen";
 import styles from "./HomeScreen.module.css";
 
+type SubScreen = "none" | "users" | "inventory";
+
 export function HomeScreen() {
   const { currentUser, shop, permissions, signOut } = useAuth();
-  const [showUserManagement, setShowUserManagement] = useState(false);
+  const [subScreen, setSubScreen] = useState<SubScreen>("none");
 
-  if (showUserManagement) {
-    return <UserManagementScreen onBack={() => setShowUserManagement(false)} />;
+  if (subScreen === "users") {
+    return <UserManagementScreen onBack={() => setSubScreen("none")} />;
+  }
+  if (subScreen === "inventory") {
+    return <InventoryListScreen onBack={() => setSubScreen("none")} />;
   }
 
   return (
@@ -21,8 +27,13 @@ export function HomeScreen() {
           </p>
         </div>
         <div className={styles.actions}>
+          {(permissions.has("MANAGE_PRODUCTS") || permissions.has("VIEW_STOCK_RECORDS")) && (
+            <button type="button" className={styles.linkButton} onClick={() => setSubScreen("inventory")}>
+              Products
+            </button>
+          )}
           {permissions.has("MANAGE_USERS") && (
-            <button type="button" className={styles.linkButton} onClick={() => setShowUserManagement(true)}>
+            <button type="button" className={styles.linkButton} onClick={() => setSubScreen("users")}>
               Manage users
             </button>
           )}
