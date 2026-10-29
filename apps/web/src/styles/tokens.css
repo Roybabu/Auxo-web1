@@ -1,0 +1,169 @@
+/*
+ * Design tokens. Dark is the showcase theme; light follows automatically by
+ * default. `data-theme="dark"` / `data-theme="light"` on <html> overrides
+ * the system preference (set by the theme toggle).
+ *
+ * Palette is intentionally narrow: near-black/near-white surfaces, one cool
+ * accent, and red/green reserved for money meaning only (owes / paid).
+ */
+
+:root {
+  /* ---- Type ---- */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    "Noto Sans", "Noto Sans Devanagari", "Noto Sans Bengali", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", monospace;
+
+  --text-xs: 0.75rem; /* 12px — small labels */
+  --text-sm: 0.875rem; /* 14px */
+  --text-base: 1rem; /* 16px */
+  --text-lg: 1.125rem; /* 18px */
+  --text-xl: 1.375rem; /* 22px */
+  --text-2xl: 1.75rem; /* 28px */
+  --text-3xl: 2.25rem; /* 36px — money */
+  --text-4xl: 3rem; /* 48px — big money */
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* ---- Spacing (4px base) ---- */
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* ---- Radii ---- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+  --radius-full: 999px;
+
+  /* ---- Borders ---- */
+  --border-width-thin: 1px;
+
+  /* ---- Motion ---- */
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+
+  /* ---- Touch ---- */
+  --touch-target-min: 44px;
+
+  /* ---- Focus ---- */
+  --focus-ring-width: 2px;
+
+  /* ---- Z-index scale ---- */
+  --z-command-palette: 100;
+  --z-overlay: 90;
+  --z-header: 10;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+  }
+}
+
+/* ===== Dark theme (default / showcase) ===== */
+:root,
+:root[data-theme="dark"] {
+  --color-surface-0: #0a0a0c;
+  --color-surface-1: #111114;
+  --color-surface-2: #18181c;
+  --color-surface-raised: #1f1f24;
+
+  --color-border: #2a2a30;
+  --color-border-strong: #3a3a42;
+
+  --color-text-primary: #f2f2f4;
+  --color-text-secondary: #a3a3ad;
+  --color-text-tertiary: #6b6b76;
+
+  --color-accent: #5ad1e6;
+  --color-accent-strong: #7fe0f0;
+  --color-accent-contrast: #04171b;
+  --color-accent-glow: rgb(90 209 230 / 0.35);
+
+  --color-money-owed: #ff6b6b;
+  --color-money-paid: #4ade80;
+
+  --color-danger: #ff6b6b;
+  --color-danger-surface: #2a1414;
+  --color-success-surface: #0f2317;
+
+  --color-overlay-scrim: rgb(0 0 0 / 0.6);
+  --color-focus-ring: var(--color-accent);
+}
+
+/* ===== Light theme ===== */
+@media (prefers-color-scheme: light) {
+  :root {
+    --color-surface-0: #fafafa;
+    --color-surface-1: #ffffff;
+    --color-surface-2: #f2f2f3;
+    --color-surface-raised: #ffffff;
+
+    --color-border: #e2e2e5;
+    --color-border-strong: #cfcfd4;
+
+    --color-text-primary: #121214;
+    --color-text-secondary: #55555e;
+    --color-text-tertiary: #85858f;
+
+    --color-accent: #0a8fa8;
+    --color-accent-strong: #06707f;
+    --color-accent-contrast: #ffffff;
+    --color-accent-glow: rgb(10 143 168 / 0.25);
+
+    --color-money-owed: #d6433f;
+    --color-money-paid: #19863f;
+
+    --color-danger: #d6433f;
+    --color-danger-surface: #fbeaea;
+    --color-success-surface: #e8f6ec;
+
+    --color-overlay-scrim: rgb(0 0 0 / 0.35);
+    --color-focus-ring: var(--color-accent);
+  }
+}
+
+:root[data-theme="light"] {
+  --color-surface-0: #fafafa;
+  --color-surface-1: #ffffff;
+  --color-surface-2: #f2f2f3;
+  --color-surface-raised: #ffffff;
+
+  --color-border: #e2e2e5;
+  --color-border-strong: #cfcfd4;
+
+  --color-text-primary: #121214;
+  --color-text-secondary: #55555e;
+  --color-text-tertiary: #85858f;
+
+  --color-accent: #0a8fa8;
+  --color-accent-strong: #06707f;
+  --color-accent-contrast: #ffffff;
+  --color-accent-glow: rgb(10 143 168 / 0.25);
+
+  --color-money-owed: #d6433f;
+  --color-money-paid: #19863f;
+
+  --color-danger: #d6433f;
+  --color-danger-surface: #fbeaea;
+  --color-success-surface: #e8f6ec;
+
+  --color-overlay-scrim: rgb(0 0 0 / 0.35);
+  --color-focus-ring: var(--color-accent);
+}
