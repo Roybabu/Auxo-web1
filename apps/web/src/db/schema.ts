@@ -208,4 +208,42 @@ export async function ensureSchema(db: SqlDatabase): Promise<void> {
       deleted_at INTEGER
     )
   `);
+
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS customers (
+      id TEXT PRIMARY KEY,
+      android_id INTEGER,
+      name TEXT NOT NULL,
+      phone TEXT,
+      email TEXT,
+      gstin TEXT,
+      state_code TEXT,
+      address TEXT,
+      credit_limit_minor INTEGER,
+      notes TEXT,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      deleted_at INTEGER
+    )
+  `);
+  await db.exec("CREATE INDEX IF NOT EXISTS idx_customers_phone ON customers(phone)");
+
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS customer_ledger (
+      id TEXT PRIMARY KEY,
+      android_id INTEGER,
+      customer_id TEXT NOT NULL REFERENCES customers(id),
+      type TEXT NOT NULL,
+      amount_minor INTEGER NOT NULL,
+      invoice_id TEXT,
+      method TEXT,
+      reference TEXT,
+      note TEXT,
+      points INTEGER,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      deleted_at INTEGER
+    )
+  `);
+  await db.exec("CREATE INDEX IF NOT EXISTS idx_customer_ledger_customer_id ON customer_ledger(customer_id)");
 }

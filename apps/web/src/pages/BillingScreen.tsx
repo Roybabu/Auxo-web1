@@ -1,11 +1,14 @@
 import {
   billDiscountExceedsLimit,
   calculateBill,
+  checkCreditLimit,
+  CreditLimitExceededError,
   formatMinorUnits,
   lineDiscountExceedsLimit,
   money,
   normalizeDiscountReason,
   type BillLineInput,
+  type Customer,
   type DiscountSpec,
   type GstRule,
   type Money as MoneyType,
@@ -14,6 +17,7 @@ import {
 } from "@auxo/core";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { CustomerLedgerRepository, CustomerRepository } from "../db/customerRepository";
 import { useDatabase } from "../db/DatabaseContext";
 import { HeldBillRepository } from "../db/heldBillRepository";
 import { InvoiceRepository, type SaleLineMeta } from "../db/invoiceRepository";
@@ -56,6 +60,8 @@ export function BillingScreen({ onBack }: { onBack: () => void }) {
   const [submitting, setSubmitting] = useState(false);
   const [completed, setCompleted] = useState<{ number: string; grandTotal: MoneyType } | null>(null);
   const [heldBills, setHeldBills] = useState<Awaited<ReturnType<HeldBillRepository["listActive"]>>>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
 
   async function reloadHeldBills() {
     if (!db) return;
@@ -65,6 +71,7 @@ export function BillingScreen({ onBack }: { onBack: () => void }) {
   useEffect(() => {
     if (!db) return;
     void new ProductRepository(db).listWithVariants().then(setCatalogue);
+    void new CustomerRepository(db).listActive().then(setCustomers);
     void reloadHeldBills();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [db]);
@@ -253,6 +260,21 @@ export function BillingScreen({ onBack }: { onBack: () => void }) {
       return setError("Enter an amount tendered that covers the total");
     }
 
+    const selectedCustomer = customers.find((c) => c.id === selectedCustomerId) ?? null;
+    if (paymentMethod === "ACCOUNT") {
+      if (!selectedCustomer) return setError("Pick a customer to bill this to their account");
+      const ledgerRepo = new CustomerLedgerRepository(db);
+      const aging = await ledgerRepo.aging(selectedCustomer.id);
+      try {
+        checkCreditLimit(aging.balanceMinor, calculation.grandTotalMinor, selectedCustomer.creditLimitMinor);
+      } catch (err) {
+        if (err instanceof CreditLimitExceededError) {
+          return setError(`This sale would put ${selectedCustomer.name} over their credit limit`);
+        }
+        throw err;
+      }
+    }
+
     setSubmitting(true);
     try {
       const lineMeta: SaleLineMeta[] = cart.map((l) => ({
@@ -268,7 +290,7 @@ export function BillingScreen({ onBack }: { onBack: () => void }) {
       const repo = new InvoiceRepository(db);
       const result = await repo.completeSale({
         invoicePrefix: shop.invoicePrefix,
-        customerId: null,
+        customerId: selectedCustomer?.id ?? null,
         gstRegistered: shop.gstRegistered,
         pricesIncludeTax: shop.pricesIncludeTax,
         interState: shop.interState,
@@ -288,11 +310,31 @@ export function BillingScreen({ onBack }: { onBack: () => void }) {
         ],
       });
 
+      if (paymentMethod === "ACCOUNT" && selectedCustomer) {
+        const now = Date.now();
+        await new CustomerLedgerRepository(db).add({
+          id: crypto.randomUUID(),
+          androidId: null,
+          customerId: selectedCustomer.id,
+          type: "SALE",
+          amountMinor: calculation.grandTotalMinor,
+          invoiceId: result.invoiceId,
+          method: null,
+          reference: null,
+          note: null,
+          points: null,
+          createdAt: now,
+          updatedAt: now,
+          deletedAt: null,
+        });
+      }
+
       setCompleted({ number: result.number, grandTotal: calculation.grandTotalMinor });
       setCart([]);
       setBillDiscountKind("NONE");
       setBillDiscountValue("");
       setTenderedText("");
+      setSelectedCustomerId(null);
       const freshCatalogue = await new ProductRepository(db).listWithVariants();
       setCatalogue(freshCatalogue);
     } catch (err) {
@@ -404,6 +446,7 @@ export function BillingScreen({ onBack }: { onBack: () => void }) {
         <div className={styles.summary}>
           <div className={styles.discountRow}>
             <select
+              id="billDiscountKind"
               className={styles.discountKindSelect}
               value={billDiscountKind}
               onChange={(e) => setBillDiscountKind(e.target.value as typeof billDiscountKind)}
@@ -470,14 +513,14 @@ export function BillingScreen({ onBack }: { onBack: () => void }) {
           </div>
 
           <div className={styles.paymentMethods}>
-            {(["CASH", "UPI", "CARD"] as PaymentMethod[]).map((method) => (
+            {(["CASH", "UPI", "CARD", "ACCOUNT"] as PaymentMethod[]).map((method) => (
               <button
                 key={method}
                 type="button"
                 className={[styles.paymentMethodButton, paymentMethod === method ? styles.paymentMethodButtonSelected : ""].join(" ")}
                 onClick={() => setPaymentMethod(method)}
               >
-                {method}
+                {method === "ACCOUNT" ? "CREDIT" : method}
               </button>
             ))}
           </div>
@@ -492,6 +535,24 @@ export function BillingScreen({ onBack }: { onBack: () => void }) {
                 onChange={(e) => setTenderedText(e.target.value)}
               />
               {changeMinor !== null && <span>Change: {rupees(changeMinor)}</span>}
+            </div>
+          )}
+
+          {paymentMethod === "ACCOUNT" && (
+            <div className={styles.discountRow}>
+              <select
+                id="billingCustomer"
+                className={styles.discountKindSelect}
+                value={selectedCustomerId ?? ""}
+                onChange={(e) => setSelectedCustomerId(e.target.value || null)}
+              >
+                <option value="">Select a customer…</option>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 

@@ -10,4 +10,6 @@ export * from "./domain/stock";
 export * from "./domain/billing";
 export * from "./domain/discountPolicy";
 export * from "./domain/invoiceNumbering";
+export * from "./domain/ledger";
+export * from "./domain/returns";
 export * from "./storage/sqlDatabase";

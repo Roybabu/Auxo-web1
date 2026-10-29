@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { BillingScreen } from "./BillingScreen";
+import { CustomersScreen } from "./CustomersScreen";
 import { InventoryListScreen } from "./InventoryListScreen";
 import { UserManagementScreen } from "./UserManagementScreen";
 import styles from "./HomeScreen.module.css";
 
-type SubScreen = "none" | "users" | "inventory" | "billing";
+type SubScreen = "none" | "users" | "inventory" | "billing" | "customers";
 
 export function HomeScreen() {
   const { currentUser, shop, permissions, signOut } = useAuth();
@@ -19,6 +20,9 @@ export function HomeScreen() {
   }
   if (subScreen === "billing") {
     return <BillingScreen onBack={() => setSubScreen("none")} />;
+  }
+  if (subScreen === "customers") {
+    return <CustomersScreen onBack={() => setSubScreen("none")} />;
   }
 
   return (
@@ -39,6 +43,11 @@ export function HomeScreen() {
           {(permissions.has("MANAGE_PRODUCTS") || permissions.has("VIEW_STOCK_RECORDS")) && (
             <button type="button" className={styles.linkButton} onClick={() => setSubScreen("inventory")}>
               Products
+            </button>
+          )}
+          {permissions.has("MANAGE_CUSTOMERS") && (
+            <button type="button" className={styles.linkButton} onClick={() => setSubScreen("customers")}>
+              Customers
             </button>
           )}
           {permissions.has("MANAGE_USERS") && (
