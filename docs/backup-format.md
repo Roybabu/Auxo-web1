@@ -64,6 +64,37 @@ Standard DEFLATE zip, entries matched by exact name:
 - `PRAGMA user_version` must be preserved/written to match Room's schema version (1, as of the
   read commit).
 
+### Page cipher — verified against SQLCipher's own C source
+
+Page size is 4096 bytes. Every page reserves 80 trailing bytes (`reserve_sz = iv_sz(16) +
+hmac_sz(64)`, full SHA-512 digest, not truncated — confirmed in `sqlcipher.c`'s
+`sqlcipher_cipher_ctx_init` and `EVP_MAC_final`'s two-pass call in `crypto_openssl.c`).
+
+- **Page 1 only**: bytes `[0, 16)` are the KDF salt on disk (unencrypted); the *decrypted,
+  logical* view replaces those 16 bytes with the literal `SQLite format 3\0` magic — this is a
+  substitution SQLCipher performs, not a decryption (`sqlite3Codec`, `CODEC_READ_OP` branch).
+  Content therefore starts at byte 16 for page 1, byte 0 for every other page.
+- **Content**: AES-256-CBC, **no padding** (SQLCipher never pads; content is already
+  block-aligned — this is why Web Crypto's `AES-CBC`, which always auto-strips PKCS7 padding,
+  cannot be used directly for this layer; see `packages/core/src/backup/sqlcipherPage.ts` for
+  how that's worked around).
+- **IV**: 16 bytes, stored in the clear immediately after the content.
+- **HMAC-SHA512**: covers `content_ciphertext || IV || pgno` where `pgno` is the page number as
+  a **4-byte little-endian** integer (`sqlcipher_page_hmac`, default `CIPHER_FLAG_LE_PGNO`).
+- **Keys**: `encryptionKey = PBKDF2-HMAC-SHA512(database.key, kdfSalt, 256000 iter, 32 bytes)`.
+  `hmacKey` is derived *from the encryption key*, not the passphrase:
+  `PBKDF2-HMAC-SHA512(encryptionKey, kdfSalt XOR 0x3a (every byte), 2 iter, 32 bytes)` — the
+  `0x3a` mask and 2-iteration "fast KDF" are SQLCipher constants (`HMAC_SALT_MASK`,
+  `FAST_PBKDF2_ITER`, `sqlcipher.c`).
+
+**Verified**: `packages/core/src/backup/sqlcipherPage.ts` decrypts a real SQLCipher-4-compatible
+database (produced independently by `tools/android-backup-vectors` via a different library —
+SQLite3 Multiple Ciphers, not SQLCipher's own amalgamation) and recovers the exact row content
+written into it (see `packages/core/src/backup/sqlcipherPage.test.ts`). This proves the page
+cipher's key derivation, HMAC, and AES-256-CBC framing are implemented correctly against the
+documented SQLCipher 4 format — it does not yet prove compatibility with a database written by
+the real `net.zetetic:sqlcipher-android` binary itself (see "still open" below).
+
 ## 4. Room identity
 
 - `app/schemas/com.auxo.pos.data.local.AuxoDatabase/1.json`: `version = 1`,
