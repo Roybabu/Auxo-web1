@@ -12,4 +12,5 @@ export * from "./domain/discountPolicy";
 export * from "./domain/invoiceNumbering";
 export * from "./domain/ledger";
 export * from "./domain/returns";
+export * from "./domain/reports";
 export * from "./storage/sqlDatabase";
