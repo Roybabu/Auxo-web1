@@ -1,0 +1,21 @@
+{
+  "passphrase": "Vector-Backup-Passphrase-01",
+  "outerIterations": 600000,
+  "outerSaltHex": "f86b7fecc166b47ba4388794f05098d6",
+  "databaseKeyHex": "e4973df907735bfc5897ec2668e887c83d9eb836f73cc44b3eeea07291f337c4",
+  "roomIdentityHash": "a44482f9e76a1450e31cded5d5e2ad8f",
+  "databaseFileBytes": 16384,
+  "databaseSha256": "60ae8e792822b1001ab010d2fc3fc13d712c62bb77d8330fb177ab42694b7059",
+  "databaseFirst16BytesHex": "c0a4e9b83d332e035daa220526219705",
+  "databaseLooksEncrypted": true,
+  "databaseRoundTripIdentityHash": "a44482f9e76a1450e31cded5d5e2ad8f",
+  "wrongKeyRejected": true,
+  "zipBytes": 17202,
+  "zipSha256": "a26de8412024b91f27a894db560631f25ebe7b6b3fed78833c90c8288c958a67",
+  "outerKeyHex": "d3e15133fb78bd0d9abcb027a3f8d699ed5ea55a99b12657d84e5337be09e7e4",
+  "auxobakBytes": 17286,
+  "auxobakSha256": "b7ba30e2a84dfceee8385eb23801c17b64759aea68957f19cd4591da72169abe",
+  "auxobakHeaderHex": "4155584f454e4331000927c0f86b7fecc166b47ba4388794f05098d6",
+  "outerRoundTripMatches": true,
+  "wrongPassphraseRejectedOnFirstSegment": true
+}

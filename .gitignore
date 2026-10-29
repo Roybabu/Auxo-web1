@@ -8,3 +8,4 @@ coverage/
 .vite/
 playwright-report/
 test-results/
+tools/*/target/
