@@ -445,3 +445,20 @@ export interface AuditLogEntry {
   entityId: string | null;
   summary: string;
 }
+
+// ---------------------------------------------------------------------------
+// Users / sign-in (local-only: no accounts, no server — see domain/auth.ts)
+// ---------------------------------------------------------------------------
+
+export interface User extends Entity {
+  name: string;
+  role: Role;
+  /** Only meaningful for EMPLOYEE; a SUPER_ADMIN always has every permission. */
+  grantedPermissions: Permission[];
+  pinHash: string;
+  pinSalt: string;
+  /** Hashes of unused one-time recovery codes; each is removed once redeemed. */
+  recoveryCodeHashes: string[];
+  active: boolean;
+  lastSignedInAt: number | null;
+}
