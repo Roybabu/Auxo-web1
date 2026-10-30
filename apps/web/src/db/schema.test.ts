@@ -54,4 +54,12 @@ describe("ensureSchema", () => {
     expect(await db.query("SELECT name FROM products")).toEqual([{ name: "Mine" }]);
     expect(await db.query("SELECT name FROM sqlite_master WHERE name LIKE 'legacy_android_%'")).toEqual([]);
   });
+
+  it("adds the original-bill columns to a bills table created before they existed", async () => {
+    const db = await memoryDatabase();
+    await db.exec("CREATE TABLE invoices (id TEXT PRIMARY KEY, android_id INTEGER, number TEXT NOT NULL)");
+    await ensureSchema(db);
+    const columns = (await db.query<{ name: string }>("SELECT name FROM pragma_table_info('invoices')")).map((c) => c.name);
+    expect(columns).toEqual(expect.arrayContaining(["original_invoice_id", "original_invoice_number"]));
+  });
 });

@@ -237,14 +237,12 @@ export function mapAndroidToWeb(
   }
 
   const invoices: WebRow[] = [];
-  let returnLinksDropped = 0;
   for (const r of rows("invoices")) {
     const androidId = numOr(r.id, 0);
     const id = newId();
     invoiceIds.set(androidId, id);
     const createdAt = numOr(r.created_at, 0);
     invoiceStamps.set(androidId, createdAt);
-    if (r.original_invoice_id !== null && r.original_invoice_id !== undefined) returnLinksDropped++;
     const customerId = r.customer_id === null || r.customer_id === undefined ? null : (customerIds.get(numOr(r.customer_id, -1)) ?? null);
     invoices.push({
       id,
@@ -265,15 +263,26 @@ export function mapAndroidToWeb(
       round_off_minor: numOr(r.round_off_minor, 0),
       grand_total_minor: numOr(r.grand_total_minor, 0),
       savings_minor: numOr(r.savings_minor, 0),
+      original_invoice_id: null,
+      original_invoice_number: str(r.original_invoice_number),
       note: str(r.note),
       created_at: createdAt,
       updated_at: createdAt,
       deleted_at: null,
     });
   }
-  if (returnLinksDropped > 0) {
-    warnings.push(`${returnLinksDropped} return(s) lost their link to the original bill; the return itself was kept.`);
-  }
+  // Second pass: a return can point at any bill, so link up only once every bill has its new id.
+  const androidInvoices = rows("invoices");
+  invoices.forEach((invoice, index) => {
+    const originalAndroidId = androidInvoices[index]?.original_invoice_id;
+    if (originalAndroidId === null || originalAndroidId === undefined) return;
+    const originalId = invoiceIds.get(numOr(originalAndroidId, -1));
+    if (originalId) {
+      invoice.original_invoice_id = originalId;
+    } else {
+      warnings.push(`A return (${String(invoice.number)}) points to a bill that isn't in the backup; the return was kept without the link.`);
+    }
+  });
 
   const invoiceLines: WebRow[] = [];
   for (const r of rows("invoice_lines")) {

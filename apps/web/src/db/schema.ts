@@ -173,12 +173,22 @@ export async function ensureSchema(db: SqlDatabase): Promise<void> {
       round_off_minor INTEGER NOT NULL,
       grand_total_minor INTEGER NOT NULL,
       savings_minor INTEGER NOT NULL,
+      original_invoice_id TEXT,
+      original_invoice_number TEXT,
       note TEXT,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL,
       deleted_at INTEGER
     )
   `);
+  // Databases created before returns could point back at their bill don't have these columns yet.
+  const invoiceColumns = (await db.query<{ name: string }>("SELECT name FROM pragma_table_info('invoices')")).map((c) => c.name);
+  if (!invoiceColumns.includes("original_invoice_id")) {
+    await db.exec("ALTER TABLE invoices ADD COLUMN original_invoice_id TEXT");
+  }
+  if (!invoiceColumns.includes("original_invoice_number")) {
+    await db.exec("ALTER TABLE invoices ADD COLUMN original_invoice_number TEXT");
+  }
 
   await db.exec(`
     CREATE TABLE IF NOT EXISTS invoice_lines (

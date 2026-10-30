@@ -9,6 +9,22 @@ import styles from "./BackupScreen.module.css";
 const MIN_PASSPHRASE_LENGTH = 10;
 const DB_NAME = "auxo";
 
+const TABLE_LABELS: Record<string, string> = {
+  products: "products",
+  product_variants: "item variants",
+  customers: "customers",
+  invoices: "bills",
+  invoice_lines: "bill lines",
+  payments: "payments",
+  customer_ledger: "credit-book entries",
+  stock_movements: "stock movements",
+  audit_log: "activity-log entries",
+};
+
+function tableLabel(table: string): string {
+  return TABLE_LABELS[table] ?? table.replace(/_/g, " ");
+}
+
 export function BackupScreen({ onBack }: { onBack: () => void }) {
   const { db, reopen } = useDatabase();
   const [createPassphrase, setCreatePassphrase] = useState("");
@@ -90,7 +106,7 @@ export function BackupScreen({ onBack }: { onBack: () => void }) {
         const mapped = mapAndroidToWeb(tables);
         const counts = mapped.tables
           .filter((t) => t.table !== "number_sequences")
-          .map((t) => `${t.rows.length} ${t.table.replace(/_/g, " ")}`)
+          .map((t) => `${t.rows.length} ${tableLabel(t.table)}`)
           .join(", ");
         const proceed = window.confirm(
           `This is a backup from the Auxo Android app. Importing replaces this device's products, customers, bills and stock history with: ${counts}. Your sign-in accounts here are kept. Continue?`,
@@ -98,7 +114,7 @@ export function BackupScreen({ onBack }: { onBack: () => void }) {
         if (!proceed) return;
         await importAndroidData(db, mapped);
         const notes = [
-          ...Object.entries(mapped.skipped).map(([table, n]) => `${n} ${table.replace(/_/g, " ")} (not supported on web yet)`),
+          ...Object.entries(mapped.skipped).map(([table, n]) => `${n} ${tableLabel(table)} (not supported on web yet)`),
           ...mapped.warnings,
         ];
         window.alert(

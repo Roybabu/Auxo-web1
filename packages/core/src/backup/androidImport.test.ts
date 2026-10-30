@@ -106,7 +106,17 @@ describe("mapAndroidToWeb, against the real Room schema", () => {
     expect(variants[0]).toMatchObject({ barcode: "890100", price_minor: 49900, low_stock_threshold: 3, reorder_quantity: null });
     expect(variants[1]).toMatchObject({ barcode: null, low_stock_threshold: null });
     expect(variants[0]!.product_id).toBe(shirt!.id);
-    expect(result.warnings).toEqual([expect.stringContaining("1 return(s)")]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it("keeps a return when its original bill is missing, and says so", () => {
+    const result = mapAndroidToWeb(
+      { invoices: [{ id: 2, number: "CN/1", type: "RETURN", created_at: 1, original_invoice_id: 99, original_invoice_number: "INV/9" }] },
+      nextId,
+    );
+    const [invoice] = result.tables.find((t) => t.table === "invoices")!.rows;
+    expect(invoice).toMatchObject({ type: "CREDIT_NOTE", original_invoice_id: null, original_invoice_number: "INV/9" });
+    expect(result.warnings.join("\n")).toContain("isn't in the backup");
   });
 
   it("keeps going past damaged rows and says so", () => {
@@ -139,7 +149,9 @@ describe("mapAndroidToWeb, against the real Room schema", () => {
     expect(sale).toMatchObject({ number: "SB/2025-26/00001", type: "SALE", customer_id: customer.id, grand_total_minor: 49900 });
     expect(creditNote!.type).toBe("CREDIT_NOTE");
     expect(Object.keys(sale!)).not.toContain("seller_name");
-    expect(result.warnings.join("\n")).toContain("1 return(s) lost their link");
+    expect(creditNote).toMatchObject({ original_invoice_id: sale!.id });
+    expect(sale!.original_invoice_id).toBeNull();
+    expect(result.warnings).toEqual([]);
 
     expect(byTable.invoice_lines![0]).toMatchObject({ invoice_id: sale!.id, product_name: "Cotton Shirt", total_minor: 49900 });
     expect(byTable.invoice_lines![0]!.variant_id).toBe(byTable.product_variants![0]!.id);
