@@ -40,6 +40,10 @@ export async function buildAndroidBackup(passphrase: string): Promise<Uint8Array
   `);
   const plainDatabaseBytes = sqlite3.capi.sqlite3_js_db_export(db.pointer!);
   db.close();
+  // Real Android databases are in WAL mode (header bytes 18-19 = 2); mimic that so the importer is
+  // exercised against it, as it was when a real backup first failed to open without handling it.
+  plainDatabaseBytes[18] = 2;
+  plainDatabaseBytes[19] = 2;
 
   const { auxobak } = await createBackup({
     backupPassphrase: passphrase,

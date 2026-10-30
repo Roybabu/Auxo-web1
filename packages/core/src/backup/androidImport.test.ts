@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
 import { describe, expect, it } from "vitest";
-import { looksLikeAndroidDatabase, mapAndroidToWeb, type AndroidTables } from "./androidImport";
+import { asRollbackJournalDatabase, looksLikeAndroidDatabase, mapAndroidToWeb, type AndroidTables } from "./androidImport";
 
 interface RoomSchema {
   database: { entities: { tableName: string; createSql: string; indices?: { createSql: string }[] }[] };
@@ -13,9 +13,11 @@ const schema = JSON.parse(
   readFileSync(join(dirname(fileURLToPath(import.meta.url)), "__fixtures__", "room-schema-v1.json"), "utf8"),
 ) as RoomSchema;
 
+const sqlite3Ready = sqlite3InitModule();
+
 /** Builds an empty database from the Android app's own exported Room DDL, so column names are the real ones. */
 async function roomDatabase() {
-  const sqlite3 = await sqlite3InitModule();
+  const sqlite3 = await sqlite3Ready;
   const db = new sqlite3.oo1.DB();
   for (const entity of schema.database.entities) {
     db.exec(entity.createSql.replaceAll("${TABLE_NAME}", entity.tableName));
@@ -163,5 +165,25 @@ describe("mapAndroidToWeb, against the real Room schema", () => {
       categories: ["GARMENT", "GENERAL"],
     });
     expect(result.skipped).toEqual({ suppliers: 1 });
+  });
+
+  it("makes a WAL-mode Android database readable, without changing the original", async () => {
+    const sqlite3 = await sqlite3Ready;
+    const source = await roomDatabase();
+    source.exec("INSERT INTO customers (id, name, created_at, updated_at) VALUES (1, 'Asha', 1, 1)");
+    const bytes = sqlite3.capi.sqlite3_js_db_export(source.pointer!);
+    bytes[18] = 2;
+    bytes[19] = 2;
+
+    const open = (data: Uint8Array) => {
+      const db = new sqlite3.oo1.DB();
+      const pointer = sqlite3.wasm.allocFromTypedArray(data);
+      sqlite3.capi.sqlite3_deserialize(db.pointer!, "main", pointer, data.length, data.length, sqlite3.capi.SQLITE_DESERIALIZE_FREEONCLOSE);
+      return db;
+    };
+    expect(() => open(bytes).selectValue("SELECT count(*) FROM customers")).toThrow();
+    const fixed = asRollbackJournalDatabase(bytes);
+    expect(open(fixed).selectValue("SELECT count(*) FROM customers")).toBe(1);
+    expect([bytes[18], bytes[19]]).toEqual([2, 2]);
   });
 });

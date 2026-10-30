@@ -1,4 +1,4 @@
-import type { SqlDatabase, SqlDatabaseFactory, SqlRow, SqlValue } from "@auxo/core";
+import { asRollbackJournalDatabase, type SqlDatabase, type SqlDatabaseFactory, type SqlRow, type SqlValue } from "@auxo/core";
 
 /**
  * Main-thread client for the OPFS SQLite worker (see `opfsWorker.ts` for why this has to run in
@@ -110,7 +110,7 @@ export class OpfsSqlDatabaseFactory implements SqlDatabaseFactory {
   /** Every table's rows from a SQLite file's bytes, read in a throwaway in-memory database. */
   async readSqliteTables(bytes: Uint8Array): Promise<Record<string, Record<string, unknown>[]>> {
     const client = getSharedClient();
-    return (await client.call({ type: "readSqlite", bytes })) as Record<string, Record<string, unknown>[]>;
+    return (await client.call({ type: "readSqlite", bytes: asRollbackJournalDatabase(bytes) })) as Record<string, Record<string, unknown>[]>;
   }
 
   /**

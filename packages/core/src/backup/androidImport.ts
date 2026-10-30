@@ -36,6 +36,18 @@ export interface AndroidImportResult {
   warnings: string[];
 }
 
+/**
+ * Android's Room databases are in WAL mode (SQLite header bytes 18 and 19 are 2), which SQLite
+ * can't open from an in-memory copy. A backup is fully checkpointed, so switching those two
+ * header bytes to the ordinary rollback-journal mode (1) is enough to read it. Returns a copy.
+ */
+export function asRollbackJournalDatabase(bytes: Uint8Array): Uint8Array {
+  const copy = bytes.slice();
+  if (copy.length > 19 && copy[18] === 2) copy[18] = 1;
+  if (copy.length > 19 && copy[19] === 2) copy[19] = 1;
+  return copy;
+}
+
 export const ANDROID_REQUIRED_TABLES = ["products", "product_variants", "store_settings"] as const;
 
 export function looksLikeAndroidDatabase(tableNames: readonly string[]): boolean {
