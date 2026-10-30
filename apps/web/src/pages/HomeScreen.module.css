@@ -1,21 +1,20 @@
 .page {
   min-height: 100%;
-  padding: var(--space-6);
-  max-width: 720px;
+  padding: var(--space-8) var(--space-6);
+  max-width: 960px;
   margin: 0 auto;
 }
 
 .header {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: var(--space-8);
-  flex-wrap: wrap;
-  gap: var(--space-3);
+  gap: var(--space-4);
+  margin-bottom: var(--space-10);
 }
 
 .greeting {
-  font-size: var(--text-xl);
+  font-size: var(--text-2xl);
   font-weight: var(--weight-semibold);
   margin: 0;
 }
@@ -26,16 +25,11 @@
   margin: var(--space-1) 0 0;
 }
 
-.actions {
-  display: flex;
-  gap: var(--space-3);
-}
-
-.linkButton {
+.signOut {
   appearance: none;
   border: var(--border-width-thin) solid var(--color-border-strong);
   background: transparent;
-  color: var(--color-text-primary);
+  color: var(--color-text-secondary);
   font-size: var(--text-sm);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-md);
@@ -43,32 +37,133 @@
   min-height: var(--touch-target-min);
 }
 
-.card {
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+.stat {
   background: var(--color-surface-1);
   border: var(--border-width-thin) solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: var(--space-6);
+  padding: var(--space-5) var(--space-6);
 }
 
-.cardTitle {
+.statLabel {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
-  margin: 0 0 var(--space-2);
+  margin: 0;
 }
 
-.permissionList {
+.statValue {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-semibold);
+  margin: var(--space-2) 0 var(--space-1);
+  font-variant-numeric: tabular-nums;
+}
+
+.owed {
+  color: var(--color-money-owed);
+}
+
+.statMeta {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+  margin: 0;
+  min-height: 1em;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+
+.tile {
+  appearance: none;
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-top: var(--space-4);
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  min-height: 112px;
+  padding: var(--space-5) var(--space-6);
+  text-align: left;
+  background: var(--color-surface-1);
+  color: var(--color-text-primary);
+  border: var(--border-width-thin) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
 }
 
-.permissionBadge {
-  font-family: var(--font-mono);
-  font-size: 0.7rem;
+.tile:hover {
+  border-color: var(--color-border-strong);
   background: var(--color-surface-2);
-  border: var(--border-width-thin) solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: var(--space-1) var(--space-2);
+}
+
+.tilePrimary {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  border-color: transparent;
+}
+
+.tilePrimary:hover {
+  background: var(--color-accent-strong);
+  border-color: transparent;
+}
+
+.tileLabel {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+}
+
+.tileHint {
+  font-size: var(--text-sm);
+  opacity: 0.7;
+}
+
+.themeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-top: var(--space-10);
+  padding-top: var(--space-6);
+  border-top: var(--border-width-thin) solid var(--color-border);
+}
+
+.themeLabel {
+  font-size: var(--text-sm);
   color: var(--color-text-secondary);
+}
+
+.segmented {
+  display: inline-flex;
+  border: var(--border-width-thin) solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.segment {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-4);
+  min-height: var(--touch-target-min);
+  cursor: pointer;
+}
+
+.segmentActive {
+  background: var(--color-surface-2);
+  color: var(--color-text-primary);
+}
+
+@media (max-width: 520px) {
+  .page {
+    padding: var(--space-6) var(--space-4);
+  }
 }

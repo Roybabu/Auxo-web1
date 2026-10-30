@@ -11,9 +11,9 @@ function readStoredPreference(): ThemePreference {
       return stored;
     }
   } catch {
-    // localStorage unavailable (private mode, etc.) — fall back to system.
+    // localStorage unavailable (private mode, etc.) — fall back to dark, the showcase theme.
   }
-  return "system";
+  return "dark";
 }
 
 function applyPreference(preference: ThemePreference): void {
@@ -23,6 +23,10 @@ function applyPreference(preference: ThemePreference): void {
   } else {
     root.setAttribute("data-theme", preference);
   }
+}
+
+export function applyStoredTheme(): void {
+  applyPreference(readStoredPreference());
 }
 
 export function useTheme(): [ThemePreference, (preference: ThemePreference) => void] {
