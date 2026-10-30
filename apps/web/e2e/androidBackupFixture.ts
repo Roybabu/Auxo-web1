@@ -36,7 +36,7 @@ export async function buildAndroidBackup(passphrase: string): Promise<Uint8Array
         cgst_minor, sgst_minor, igst_minor, round_off_minor, rounded_to_rupee, grand_total_minor, savings_minor, customer_id)
       VALUES (100, 'SB/2025-26/00001', 'SALE', 4000, 's', '', '', '', '', '', '', 0, 0, 0, 49900, 0, 49900, 0, 0, 0, 0, 0, 49900, 0, 5);
     INSERT INTO customer_ledger (id, customer_id, type, amount_minor, invoice_id, created_at, points)
-      VALUES (1, 5, 'SALE', 49900, 100, 4000, 0), (2, 5, 'PAYMENT', 10000, NULL, 4500, 0);
+      VALUES (1, 5, 'SALE', 49900, 100, 4000, 0), (2, 5, 'PAYMENT', -10000, NULL, 4500, 0);
   `);
   const plainDatabaseBytes = sqlite3.capi.sqlite3_js_db_export(db.pointer!);
   db.close();

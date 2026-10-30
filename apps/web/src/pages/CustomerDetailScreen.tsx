@@ -12,8 +12,6 @@ function newId(): string {
   return crypto.randomUUID();
 }
 
-const CHARGE_TYPES = new Set(["SALE", "OPENING_BALANCE"]);
-
 export function CustomerDetailScreen({ customerId, onBack }: { customerId: string; onBack: () => void }) {
   const { db } = useDatabase();
   const [customer, setCustomer] = useState<Customer | null>(null);
@@ -62,7 +60,7 @@ export function CustomerDetailScreen({ customerId, onBack }: { customerId: strin
       androidId: null,
       customerId: customer.id,
       type: "PAYMENT",
-      amountMinor: money(Math.round(amount * 100)),
+      amountMinor: money(-Math.round(amount * 100)),
       invoiceId: null,
       method: "CASH",
       reference: null,
@@ -121,7 +119,8 @@ export function CustomerDetailScreen({ customerId, onBack }: { customerId: strin
         <p className={styles.ledgerType}>No activity yet.</p>
       ) : (
         entries.map((entry) => {
-          const isCharge = CHARGE_TYPES.has(entry.type);
+          const signed = entry.amountMinor as unknown as number;
+          const isCharge = signed > 0;
           return (
             <div key={entry.id} className={styles.ledgerRow}>
               <div>
@@ -130,7 +129,7 @@ export function CustomerDetailScreen({ customerId, onBack }: { customerId: strin
               </div>
               <span className={[styles.ledgerAmount, isCharge ? styles.amountCharge : styles.amountSettle].join(" ")}>
                 {isCharge ? "+" : "−"}
-                {rupees(entry.amountMinor as unknown as number)}
+                {rupees(Math.abs(signed))}
               </span>
             </div>
           );

@@ -23,7 +23,7 @@ describe("computeLedgerAging", () => {
   it("a full payment clears the balance and owingSince", () => {
     const entries: LedgerEntryInput[] = [
       { type: "SALE", amountMinor: money(1000), createdAt: T0 },
-      { type: "PAYMENT", amountMinor: money(1000), createdAt: T0 + DAY },
+      { type: "PAYMENT", amountMinor: money(-1000), createdAt: T0 + DAY },
     ];
     const result = computeLedgerAging(entries, T0 + 2 * DAY);
     expect(result.balanceMinor).toBe(0);
@@ -34,7 +34,7 @@ describe("computeLedgerAging", () => {
     const entries: LedgerEntryInput[] = [
       { type: "SALE", amountMinor: money(500), createdAt: T0 },
       { type: "SALE", amountMinor: money(300), createdAt: T0 + DAY },
-      { type: "PAYMENT", amountMinor: money(500), createdAt: T0 + 2 * DAY },
+      { type: "PAYMENT", amountMinor: money(-500), createdAt: T0 + 2 * DAY },
     ];
     const result = computeLedgerAging(entries, T0 + 3 * DAY);
     // The ₹500 payment should have fully cleared the first (older) ₹500 sale, leaving only
@@ -47,7 +47,7 @@ describe("computeLedgerAging", () => {
     const entries: LedgerEntryInput[] = [
       { type: "SALE", amountMinor: money(500), createdAt: T0 },
       { type: "SALE", amountMinor: money(300), createdAt: T0 + DAY },
-      { type: "PAYMENT", amountMinor: money(200), createdAt: T0 + 2 * DAY },
+      { type: "PAYMENT", amountMinor: money(-200), createdAt: T0 + 2 * DAY },
     ];
     const result = computeLedgerAging(entries, T0 + 3 * DAY);
     expect(result.balanceMinor).toBe(600); // 500-200 + 300
@@ -57,7 +57,7 @@ describe("computeLedgerAging", () => {
   it("an overpayment becomes advance credit applied to the next future charge", () => {
     const entries: LedgerEntryInput[] = [
       { type: "SALE", amountMinor: money(500), createdAt: T0 },
-      { type: "PAYMENT", amountMinor: money(800), createdAt: T0 + DAY }, // pays 500, ₹300 advance
+      { type: "PAYMENT", amountMinor: money(-800), createdAt: T0 + DAY }, // pays 500, ₹300 advance
       { type: "SALE", amountMinor: money(1000), createdAt: T0 + 2 * DAY },
     ];
     const result = computeLedgerAging(entries, T0 + 3 * DAY);

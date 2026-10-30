@@ -73,7 +73,7 @@ async function sampleTables(): Promise<AndroidTables> {
       VALUES (1000, 100, 70, 'Cotton Shirt', 'M · Blue', '890100', 1, 49900, 0, 47524, 500, 1188, 1188, 0, 49900, 0);
     INSERT INTO payments (id, invoice_id, method, kind, amount_minor, created_at) VALUES (1, 100, 'CREDIT', 'PAYMENT', 49900, 4000);
     INSERT INTO customer_ledger (id, customer_id, type, amount_minor, invoice_id, created_at, points)
-      VALUES (1, 5, 'SALE', 49900, 100, 4000, 0), (2, 5, 'PAYMENT', 10000, NULL, 4500, 0);
+      VALUES (1, 5, 'SALE', 49900, 100, 4000, 0), (2, 5, 'PAYMENT', -10000, NULL, 4500, 0);
     UPDATE customer_ledger SET method = 'CREDIT' WHERE id = 2;
     INSERT INTO stock_movements (id, variant_id, quantity_change, reason, created_at, invoice_id) VALUES (1, 70, -1, 'SOLD', 4000, 100);
     INSERT INTO number_sequences (name, next_value) VALUES ('SB|2025', 2);
@@ -148,7 +148,7 @@ describe("mapAndroidToWeb, against the real Room schema", () => {
     const ledger = byTable.customer_ledger!;
     expect(ledger.map((l) => l.type)).toEqual(["SALE", "PAYMENT"]);
     expect(ledger[0]).toMatchObject({ customer_id: customer.id, invoice_id: sale!.id });
-    expect(ledger[1]).toMatchObject({ method: "ACCOUNT", amount_minor: 10000 });
+    expect(ledger[1]).toMatchObject({ method: "ACCOUNT", amount_minor: -10000 });
     expect(byTable.stock_movements![0]).toMatchObject({ reason: "SOLD", quantity_change: -1, invoice_id: sale!.id });
     expect(byTable.number_sequences).toEqual([{ name: "SB|2025", next_value: 2 }]);
   });

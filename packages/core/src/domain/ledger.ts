@@ -29,10 +29,15 @@ export interface LedgerAgingResult {
   buckets: AgeBuckets;
 }
 
+const MONEY_TYPES: ReadonlySet<CustomerLedgerEntryType> = new Set(["SALE", "OPENING_BALANCE", "PAYMENT", "RETURN"]);
+
 /**
- * Processes ledger entries in chronological order, settling each PAYMENT/RETURN against the
- * oldest outstanding SALE/OPENING_BALANCE charge(s) first. POINTS_* and PROMISE entries carry
- * no money effect and are ignored here (they're read from the ledger separately).
+ * Processes ledger entries in chronological order. Amounts are signed exactly as in the Android
+ * app: positive adds to what the customer owes (a sale on account, an opening balance owed),
+ * negative takes it off (a payment, a return, money paid in advance). Each negative entry settles
+ * the oldest outstanding charge(s) first, and any excess is carried forward as advance credit that
+ * the next charges use up. POINTS_* and PROMISE entries carry no money effect and are ignored here
+ * (they're read from the ledger separately).
  */
 export function computeLedgerAging(entries: readonly LedgerEntryInput[], nowMillis: number): LedgerAgingResult {
   const sorted = [...entries].sort((a, b) => a.createdAt - b.createdAt);
@@ -40,8 +45,10 @@ export function computeLedgerAging(entries: readonly LedgerEntryInput[], nowMill
   let advanceCredit = 0;
 
   for (const entry of sorted) {
-    if (entry.type === "SALE" || entry.type === "OPENING_BALANCE") {
-      let amount = entry.amountMinor as number;
+    if (!MONEY_TYPES.has(entry.type)) continue;
+    const signed = entry.amountMinor as number;
+    if (signed > 0) {
+      let amount = signed;
       if (advanceCredit > 0) {
         const used = Math.min(advanceCredit, amount);
         advanceCredit -= used;
@@ -50,8 +57,8 @@ export function computeLedgerAging(entries: readonly LedgerEntryInput[], nowMill
       if (amount > 0) {
         charges.push({ createdAt: entry.createdAt, remaining: amount });
       }
-    } else if (entry.type === "PAYMENT" || entry.type === "RETURN") {
-      let settlement = entry.amountMinor as number;
+    } else if (signed < 0) {
+      let settlement = -signed;
       while (settlement > 0 && charges.length > 0) {
         const front = charges[0]!;
         const used = Math.min(front.remaining, settlement);
@@ -63,7 +70,6 @@ export function computeLedgerAging(entries: readonly LedgerEntryInput[], nowMill
         advanceCredit += settlement;
       }
     }
-    // POINTS_EARNED / POINTS_REDEEMED / POINTS_REVERSED / PROMISE: no money effect.
   }
 
   const outstandingTotal = charges.reduce((sum, c) => sum + c.remaining, 0);
