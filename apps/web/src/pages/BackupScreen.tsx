@@ -1,5 +1,6 @@
-import { createBackup, restoreBackup } from "@auxo/core";
+import { createBackup, looksLikeAndroidDatabase, mapAndroidToWeb, restoreBackup } from "@auxo/core";
 import { useRef, useState } from "react";
+import { importAndroidData } from "../db/androidImport";
 import { useDatabase } from "../db/DatabaseContext";
 import { ShopRepository } from "../db/shopRepository";
 import { OpfsSqlDatabaseFactory } from "../storage/opfsDatabase";
@@ -78,20 +79,43 @@ export function BackupScreen({ onBack }: { onBack: () => void }) {
     }
     if (!db) return setError("Storage is not ready yet");
 
-    const confirmed = window.confirm(
-      "Restoring will replace everything currently stored on this device with the backup's contents. This cannot be undone. Continue?",
-    );
-    if (!confirmed) return;
-
     setBusy(true);
     try {
       const fileBytes = new Uint8Array(await file.arrayBuffer());
       const restored = await restoreBackup(restorePassphrase, fileBytes);
+      const factory = new OpfsSqlDatabaseFactory();
+      const tables = await factory.readSqliteTables(restored.databaseBytes);
+
+      if (looksLikeAndroidDatabase(Object.keys(tables))) {
+        const mapped = mapAndroidToWeb(tables);
+        const counts = mapped.tables
+          .filter((t) => t.table !== "number_sequences")
+          .map((t) => `${t.rows.length} ${t.table.replace(/_/g, " ")}`)
+          .join(", ");
+        const proceed = window.confirm(
+          `This is a backup from the Auxo Android app. Importing replaces this device's products, customers, bills and stock history with: ${counts}. Your sign-in accounts here are kept. Continue?`,
+        );
+        if (!proceed) return;
+        await importAndroidData(db, mapped);
+        const notes = [
+          ...Object.entries(mapped.skipped).map(([table, n]) => `${n} ${table.replace(/_/g, " ")} (not supported on web yet)`),
+          ...mapped.warnings,
+        ];
+        window.alert(
+          `Imported ${counts}.${notes.length ? `\n\nNot carried over:\n- ${notes.join("\n- ")}` : ""}`,
+        );
+        await reopen();
+        return;
+      }
+
+      const confirmed = window.confirm(
+        "Restoring will replace everything currently stored on this device with the backup's contents. This cannot be undone. Continue?",
+      );
+      if (!confirmed) return;
 
       // The SAH pool allows only one open access handle per file, so the current connection
       // must be closed before the restored bytes can be written over it.
       await db.close();
-      const factory = new OpfsSqlDatabaseFactory();
       await factory.importBytes(DB_NAME, restored.databaseBytes);
 
       await reopen();
@@ -172,10 +196,11 @@ export function BackupScreen({ onBack }: { onBack: () => void }) {
           {busy ? "Working…" : "Choose backup file and restore"}
         </button>
         <p className={styles.warning}>
-          This backup format uses the same encryption as the Android app (Tink streaming AEAD +
-          SQLCipher), verified against real test vectors — see docs/backup-format.md. The data
-          inside still uses this web app's own table layout, not yet the Android app's exact Room
-          schema, so a backup made here won't open in the Android app yet, and vice versa.
+          Backups from the Auxo Android app can be restored here too: products, customers, bills,
+          payments, the credit book, stock history and bill numbering are imported, and your sign-in
+          accounts on this device are kept. Suppliers, purchase orders, quotations, parked bills, the
+          day-close history and the activity log are not imported yet. Backups made here can't be
+          opened in the Android app yet.
         </p>
       </div>
     </main>

@@ -19,6 +19,7 @@
     "fflate": "^0.8.2"
   },
   "devDependencies": {
+    "@sqlite.org/sqlite-wasm": "3.54.1-build1",
     "@types/aes-js": "^3.1.4",
     "@types/node": "^22.10.2",
     "eslint": "^9.17.0",

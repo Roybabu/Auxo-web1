@@ -76,6 +76,9 @@ importers:
         specifier: ^0.8.2
         version: 0.8.3
     devDependencies:
+      '@sqlite.org/sqlite-wasm':
+        specifier: 3.54.1-build1
+        version: 3.54.1-build1
       '@types/aes-js':
         specifier: ^3.1.4
         version: 3.1.4

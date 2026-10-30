@@ -107,6 +107,12 @@ export class OpfsSqlDatabaseFactory implements SqlDatabaseFactory {
     return (await client.call({ type: "exportBytes", name })) as Uint8Array;
   }
 
+  /** Every table's rows from a SQLite file's bytes, read in a throwaway in-memory database. */
+  async readSqliteTables(bytes: Uint8Array): Promise<Record<string, Record<string, unknown>[]>> {
+    const client = getSharedClient();
+    return (await client.call({ type: "readSqlite", bytes })) as Record<string, Record<string, unknown>[]>;
+  }
+
   /**
    * Overwrites the named database file with `bytes` (a restore). Any existing open handle to
    * that database must be closed first — the SAH pool allows only one access handle per file.

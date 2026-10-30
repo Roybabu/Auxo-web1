@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { buildAndroidBackup } from "./androidBackupFixture";
 
 /**
  * Drives one continuous story through a single shared page/browser context (OPFS storage is
@@ -125,5 +126,31 @@ test.describe.serial("main flows", () => {
     await page.click('button:has-text("Products")');
     await expect(page.locator("text=Test Widget")).toBeVisible();
     await expect(page.locator("text=Post-Backup Widget")).not.toBeVisible();
+  });
+
+  test("imports a backup made by the Android app", async () => {
+    const passphrase = "android-backup-passphrase";
+    const buffer = Buffer.from(await buildAndroidBackup(passphrase));
+
+    await page.click('button:has-text("← Back")');
+    await page.click('button:has-text("Backup")');
+    await page.fill("#restorePassphrase", passphrase);
+    page.on("dialog", (dialog) => void dialog.accept());
+    await page.locator("input[type=file]").setInputFiles({ name: "android.auxobak", mimeType: "application/octet-stream", buffer });
+
+    await expect(page.locator('button:has-text("Owner")')).toBeVisible();
+    await page.click('button:has-text("Owner")');
+    await page.locator('[aria-label="PIN entry"]').waitFor();
+    await page.keyboard.type("1111");
+    await expect(page.locator("text=Android Shop")).toBeVisible();
+
+    await page.click('button:has-text("Products")');
+    await expect(page.locator("text=Android Shirt")).toBeVisible();
+    await expect(page.locator("text=Test Widget")).not.toBeVisible();
+    await page.click('button:has-text("← Back")');
+
+    await page.click('button:has-text("Customers")');
+    await page.click("text=Asha Android");
+    await expect(page.locator('[class*="balanceValue"]')).toHaveText("₹399.00");
   });
 });
