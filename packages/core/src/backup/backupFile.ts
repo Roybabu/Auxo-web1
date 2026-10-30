@@ -224,7 +224,16 @@ export async function restoreBackup(backupPassphrase: string, auxobak: Uint8Arra
 
 export interface CreateBackupOptions {
   backupPassphrase: string;
-  /** Plain (unencrypted) SQLite database bytes, already laid out in Android Room schema. */
+  /**
+   * Plain (unencrypted) SQLite database bytes.
+   *
+   * If `lockDatabase` is true (the default), these bytes MUST already be laid out with
+   * SQLCipher-4's per-page reserve region (see `sqlcipherPage.ts`) — i.e. produced by a real
+   * SQLCipher/SQLite3-Multiple-Ciphers engine, matching the exact Android Room schema. Encrypting
+   * a page that was never laid out that way would silently overwrite real row data in the last
+   * 80 bytes of every page; nothing in this function can detect that mistake, so get this right
+   * before setting `lockDatabase: true`.
+   */
   plainDatabaseBytes: Uint8Array;
   databaseVersion: number;
   appVersion: string | null;
@@ -232,22 +241,37 @@ export interface CreateBackupOptions {
   appearance: AppearancePreferences;
   photos?: BackupPhoto[];
   outerIterations?: number;
+  /**
+   * Whether to additionally SQLCipher-lock the database before zipping it (on top of the outer
+   * Tink envelope, which always runs either way — the file is never unencrypted end-to-end).
+   * Default true, matching the Android app's own backups. Set false for a database export that
+   * isn't laid out with SQLCipher's page-reserve region (ordinary SQLite WASM output has none,
+   * since no codec ever attached to reserve it) — see the `plainDatabaseBytes` doc above. A
+   * `lockDatabase: false` backup is still fully encrypted by the outer envelope; it just isn't
+   * independently double-locked at the database layer, and won't carry a `database.key` entry.
+   */
+  lockDatabase?: boolean;
 }
 
 /**
- * Builds a complete `.auxobak` file: generates a fresh random SQLCipher key, encrypts the
- * database, zips it with the manifest/preferences/photos, then encrypts the whole zip with the
+ * Builds a complete `.auxobak` file: encrypts the database (unless `lockDatabase` is false),
+ * zips it with the manifest/preferences/photos, then encrypts the whole zip with the
  * passphrase-derived outer envelope. The returned `databaseKeyHex` is for the caller's own
- * records (e.g. nothing needs it after this call — it is embedded in the zip) and is not
- * required to restore, since restoring only needs `backupPassphrase`.
+ * records (e.g. nothing needs it after this call — it is embedded in the zip when present) and
+ * is not required to restore, since restoring only needs `backupPassphrase`.
  */
 export async function createBackup(
   options: CreateBackupOptions,
-): Promise<{ auxobak: Uint8Array; databaseKeyHex: string }> {
-  const databaseKeyBytes = crypto.getRandomValues(new Uint8Array(32));
-  const databaseKeyHex = Array.from(databaseKeyBytes, (b) => b.toString(16).padStart(2, "0")).join("");
+): Promise<{ auxobak: Uint8Array; databaseKeyHex: string | null }> {
+  const lockDatabase = options.lockDatabase ?? true;
 
-  const encryptedDatabase = await encryptSqlCipherDatabase(databaseKeyHex, options.plainDatabaseBytes);
+  let databaseKeyHex: string | null = null;
+  let databaseBytes = options.plainDatabaseBytes;
+  if (lockDatabase) {
+    const databaseKeyBytes = crypto.getRandomValues(new Uint8Array(32));
+    databaseKeyHex = Array.from(databaseKeyBytes, (b) => b.toString(16).padStart(2, "0")).join("");
+    databaseBytes = await encryptSqlCipherDatabase(databaseKeyHex, options.plainDatabaseBytes);
+  }
 
   const manifest: BackupManifest = {
     app: "auxo",
@@ -263,7 +287,7 @@ export async function createBackup(
 
   const zipBytes = buildBackupZip({
     manifest,
-    databaseBytes: encryptedDatabase,
+    databaseBytes,
     databaseKeyHex,
     appearance: options.appearance,
     photos: options.photos ?? [],

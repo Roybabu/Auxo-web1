@@ -100,4 +100,19 @@ export class OpfsSqlDatabaseFactory implements SqlDatabaseFactory {
     const handle = (await client.call({ type: "open", name })) as number;
     return new OpfsSqlDatabase(client, handle);
   }
+
+  /** Raw bytes of the named database file, for building a backup. */
+  async exportBytes(name: string): Promise<Uint8Array> {
+    const client = getSharedClient();
+    return (await client.call({ type: "exportBytes", name })) as Uint8Array;
+  }
+
+  /**
+   * Overwrites the named database file with `bytes` (a restore). Any existing open handle to
+   * that database must be closed first — the SAH pool allows only one access handle per file.
+   */
+  async importBytes(name: string, bytes: Uint8Array): Promise<void> {
+    const client = getSharedClient();
+    await client.call({ type: "importBytes", name, bytes });
+  }
 }

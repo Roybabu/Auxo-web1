@@ -108,6 +108,39 @@ describe("createBackup + restoreBackup, full round trip against our own implemen
     );
   });
 
+  it("lockDatabase: false round-trips an ordinary (non-reserve-laid-out) SQLite export unchanged", async () => {
+    // Deliberately uses the full page with no reserved tail — representative of a plain SQLite
+    // WASM export, which has no codec attached to reserve space. Encrypting this with the
+    // SQLCipher page cipher (lockDatabase: true) would corrupt the last 80 bytes of every page;
+    // lockDatabase: false must skip that and still round-trip the bytes exactly.
+    const plainDatabaseBytes = new Uint8Array(4096 * 2);
+    plainDatabaseBytes.set(new TextEncoder().encode("SQLite format 3\0"), 0);
+    for (let i = 16; i < plainDatabaseBytes.length; i++) {
+      plainDatabaseBytes[i] = (i * 31) % 256;
+    }
+
+    const { auxobak, databaseKeyHex } = await createBackup({
+      backupPassphrase: "a-reasonably-long-test-passphrase",
+      plainDatabaseBytes,
+      databaseVersion: 1,
+      appVersion: "0.0.0-test",
+      appearance: {
+        accent: null,
+        darkMode: null,
+        restaurantMenu: null,
+        suppliers: null,
+        creditHoldDays: null,
+        onTimeBonusPoints: null,
+      },
+      lockDatabase: false,
+      outerIterations: 10_000,
+    });
+    expect(databaseKeyHex).toBeNull();
+
+    const restored = await restoreBackup("a-reasonably-long-test-passphrase", auxobak);
+    expect(restored.databaseBytes).toEqual(plainDatabaseBytes);
+  });
+
   it("rejects the wrong passphrase", async () => {
     const plainDatabaseBytes = new Uint8Array(4096);
     plainDatabaseBytes.set(new TextEncoder().encode("SQLite format 3\0"), 0);

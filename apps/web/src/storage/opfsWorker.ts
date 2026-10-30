@@ -14,7 +14,9 @@ type Request =
   | { id: number; type: "open"; name: string }
   | { id: number; type: "exec"; handle: number; sql: string; params?: unknown[] }
   | { id: number; type: "query"; handle: number; sql: string; params?: unknown[] }
-  | { id: number; type: "close"; handle: number };
+  | { id: number; type: "close"; handle: number }
+  | { id: number; type: "exportBytes"; name: string }
+  | { id: number; type: "importBytes"; name: string; bytes: Uint8Array };
 
 type Response =
   | { id: number; ok: true; result?: unknown }
@@ -22,18 +24,27 @@ type Response =
 
 let sqlite3: Sqlite3Static | null = null;
 let poolUtil: SAHPoolUtil | null = null;
+let readyPromise: Promise<SAHPoolUtil> | null = null;
 const openDbs = new Map<number, Database>();
 let nextHandle = 1;
 
+// Two concurrent callers (e.g. React StrictMode double-invoking an effect) must not both reach
+// `installOpfsSAHPoolVfs()`: the library's own comments warn that calling it twice in rapid
+// succession before the first call's promise is cached can make both calls try to open the same
+// OPFS access handles, failing with "Access Handles cannot be created...". Caching the in-flight
+// promise (not just the resolved `poolUtil`) ensures every caller awaits the same single init.
 async function ensureReady(): Promise<SAHPoolUtil> {
-  sqlite3 ??= await sqlite3InitModule();
-  if (!poolUtil) {
+  if (poolUtil) return poolUtil;
+  readyPromise ??= (async () => {
+    sqlite3 ??= await sqlite3InitModule();
     if (!sqlite3.installOpfsSAHPoolVfs) {
       throw new Error("OPFS SAH pool VFS is not available in this environment");
     }
-    poolUtil = await sqlite3.installOpfsSAHPoolVfs({ name: "auxo-opfs" });
-  }
-  return poolUtil;
+    const pool = await sqlite3.installOpfsSAHPoolVfs({ name: "auxo-opfs" });
+    poolUtil = pool;
+    return pool;
+  })();
+  return readyPromise;
 }
 
 async function handle(request: Request): Promise<unknown> {
@@ -63,6 +74,15 @@ async function handle(request: Request): Promise<unknown> {
       const db = requireDb(request.handle);
       db.close();
       openDbs.delete(request.handle);
+      return undefined;
+    }
+    case "exportBytes": {
+      const pool = await ensureReady();
+      return pool.exportFile(`/${request.name}.sqlite3`);
+    }
+    case "importBytes": {
+      const pool = await ensureReady();
+      await pool.importDb(`/${request.name}.sqlite3`, request.bytes);
       return undefined;
     }
   }

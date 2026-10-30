@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { BackupScreen } from "./BackupScreen";
 import { BillingScreen } from "./BillingScreen";
 import { CustomersScreen } from "./CustomersScreen";
 import { InventoryListScreen } from "./InventoryListScreen";
@@ -7,7 +8,7 @@ import { ReportsScreen } from "./ReportsScreen";
 import { UserManagementScreen } from "./UserManagementScreen";
 import styles from "./HomeScreen.module.css";
 
-type SubScreen = "none" | "users" | "inventory" | "billing" | "customers" | "reports";
+type SubScreen = "none" | "users" | "inventory" | "billing" | "customers" | "reports" | "backup";
 
 export function HomeScreen() {
   const { currentUser, shop, permissions, signOut } = useAuth();
@@ -27,6 +28,9 @@ export function HomeScreen() {
   }
   if (subScreen === "reports") {
     return <ReportsScreen onBack={() => setSubScreen("none")} />;
+  }
+  if (subScreen === "backup") {
+    return <BackupScreen onBack={() => setSubScreen("none")} />;
   }
 
   return (
@@ -62,6 +66,11 @@ export function HomeScreen() {
           {permissions.has("MANAGE_USERS") && (
             <button type="button" className={styles.linkButton} onClick={() => setSubScreen("users")}>
               Manage users
+            </button>
+          )}
+          {permissions.has("BACKUP_AND_RESTORE") && (
+            <button type="button" className={styles.linkButton} onClick={() => setSubScreen("backup")}>
+              Backup
             </button>
           )}
           <button type="button" className={styles.linkButton} onClick={signOut}>
