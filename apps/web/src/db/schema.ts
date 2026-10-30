@@ -7,7 +7,37 @@ import type { SqlDatabase } from "@auxo/core";
  * are snake_case to match normal SQLite convention and to keep a consistent on-disk shape if a
  * migration path to the Android-compatible schema is needed later.
  */
+// Tables whose names the Android app also uses. Earlier versions restored an Android backup by
+// writing its database straight over ours, leaving Android-shaped copies of these under the same
+// names; ours always have an android_id column, theirs never do.
+const TABLES_SHARED_WITH_ANDROID = [
+  "products",
+  "product_variants",
+  "stock_movements",
+  "invoices",
+  "invoice_lines",
+  "payments",
+  "customers",
+  "customer_ledger",
+  "held_bills",
+];
+
+/** Moves Android-shaped tables aside (renamed, not deleted) so ours can be created in their place. */
+export async function setAsideAndroidShapedTables(db: SqlDatabase): Promise<string[]> {
+  const moved: string[] = [];
+  for (const table of TABLES_SHARED_WITH_ANDROID) {
+    const columns = await db.query<{ name: string }>(`SELECT name FROM pragma_table_info('${table}')`);
+    if (columns.length > 0 && !columns.some((c) => c.name === "android_id")) {
+      await db.exec(`ALTER TABLE ${table} RENAME TO legacy_android_${table}`);
+      moved.push(table);
+    }
+  }
+  return moved;
+}
+
 export async function ensureSchema(db: SqlDatabase): Promise<void> {
+  await setAsideAndroidShapedTables(db);
+
   await db.exec(`
     CREATE TABLE IF NOT EXISTS shop_settings (
       id INTEGER PRIMARY KEY CHECK (id = 1),
