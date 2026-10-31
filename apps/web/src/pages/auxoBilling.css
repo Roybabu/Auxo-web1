@@ -1,0 +1,156 @@
+/* Billing screen markup and styles ported from the Auxo Web design repo (packages/app). */
+.auxo-billing {
+  --emerald: #059669;
+  --emerald-dark: #047857;
+  --emerald-deep: #064e3b;
+  --emerald-pale: #d1fae5;
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --text: #17211d;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+  --auxo-emerald: var(--emerald);
+  --auxo-emerald-dark: var(--emerald-dark);
+  --auxo-border: var(--border);
+  color-scheme: light;
+  background: var(--bg);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.auxo-billing .product-thumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--emerald-deep);
+  flex: 0 0 auto;
+}
+
+.auxo-billing .muted {color: var(--text-secondary); font-size: 0.85rem;}
+.auxo-billing .error {color: var(--danger); font-size: 0.85rem;}
+.auxo-billing .billing-screen {display: grid; grid-template-columns: 1fr 360px; gap: 1.5rem; align-items: start;}
+@media (max-width: 960px) {
+  .auxo-billing .billing-screen {grid-template-columns: 1fr;}
+}
+.auxo-billing .category-chips {display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.6rem 0;}
+.auxo-billing .chip {background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 999px; padding: 0.3rem 0.8rem; font-size: 0.8rem;}
+.auxo-billing .chip:hover {background: var(--emerald-pale);}
+.auxo-billing .chip.active {background: var(--emerald); color: white; border-color: var(--emerald);}
+.auxo-billing .pos-product-grid {display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.6rem; max-height: 440px; overflow-y: auto; padding: 0.1rem;}
+.auxo-billing .pos-product-card {display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.65rem 0.7rem; text-align: left; color: var(--text); transition: border-color 0.15s ease, transform 0.08s ease;}
+.auxo-billing .pos-product-card:hover {border-color: var(--emerald);}
+.auxo-billing .pos-product-card:active {transform: scale(0.98);}
+.auxo-billing .quick-actions {display: flex; flex-wrap: wrap; gap: 0.6rem;}
+.auxo-billing .quick-action-button {display: inline-flex; align-items: center; gap: 0.5rem; background: var(--surface); color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow-sm); padding: 0.6rem 1rem; border-radius: var(--radius); font-weight: 500;}
+.auxo-billing .quick-action-button:hover {border-color: var(--emerald); color: var(--emerald-dark);}
+.auxo-billing .pos-product-name {font-size: 0.85rem; font-weight: 600; line-height: 1.25;}
+.auxo-billing .pos-product-price {font-size: 0.95rem; font-weight: 700; color: var(--emerald-dark);}
+.auxo-billing .pos-stock-badge {font-size: 0.7rem; padding: 0.1rem 0.45rem; border-radius: 999px; background: var(--emerald-pale); color: var(--emerald-dark);}
+.auxo-billing .pos-stock-badge.low {background: #fef3c7; color: var(--warning);}
+.auxo-billing .pos-stock-badge.out {background: #fee2e2; color: var(--danger);}
+.auxo-billing .checkout-success {max-width: 420px; margin: 2rem auto; text-align: center; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-md); border-radius: var(--radius); padding: 2.5rem 2rem;}
+.auxo-billing .checkout-success-icon {width: 56px; height: 56px; margin: 0 auto 1rem; border-radius: 50%; background: var(--success); color: white; font-size: 1.8rem; display: flex; align-items: center; justify-content: center;}
+.auxo-billing .checkout-success-amount {font-size: 2rem; font-weight: 800; color: var(--emerald-dark); margin: 0.5rem 0 1rem;}
+.auxo-billing .checkout-success-details {justify-content: center; margin: 0 auto 1.25rem; width: fit-content;}
+.auxo-billing .checkout-success-actions {display: flex; gap: 0.6rem; justify-content: center;}
+.auxo-billing .billing-picker, .auxo-billing .billing-cart {background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-sm); border-radius: var(--radius); padding: 1rem;}
+.auxo-billing .billing-picker input[type="text"], .auxo-billing .billing-picker > input {width: 100%; padding: 0.5rem; border: 1px solid var(--auxo-border); border-radius: 6px; margin-bottom: 0.5rem;}
+.auxo-billing .held-list li {display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;}
+.auxo-billing .held-actions {display: flex; gap: 0.3rem;}
+.auxo-billing .held-actions button {padding: 0.2rem 0.5rem; font-size: 0.75rem;}
+.auxo-billing .cart-list {list-style: none; padding: 0; margin: 0 0 1rem; display: flex; flex-direction: column; gap: 0.5rem;}
+.auxo-billing .cart-row {display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;}
+.auxo-billing .cart-label {flex: 1;}
+.auxo-billing .cart-row input {width: 64px; padding: 0.3rem; border: 1px solid var(--auxo-border); border-radius: 6px;}
+.auxo-billing .cart-line-total {width: 70px; text-align: right; font-weight: 600;}
+.auxo-billing .billing-form {display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;}
+.auxo-billing .billing-form label {display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem; color: #444;}
+.auxo-billing .billing-form input, .auxo-billing .billing-form select {padding: 0.4rem; border: 1px solid var(--auxo-border); border-radius: 6px;}
+.auxo-billing .billing-totals {display: flex; justify-content: space-between; font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;}
+.auxo-billing .billing-actions {display: flex; gap: 0.5rem;}
+.auxo-billing .checkout-button {background: var(--emerald); color: white; font-weight: 600;}
+.auxo-billing .pos-screen {display: flex; flex-direction: column; gap: 1rem;}
+.auxo-billing .pos-topbar {display: flex; align-items: center; gap: 0.6rem; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-sm); border-radius: var(--radius); padding: 0.6rem 0.75rem; flex-wrap: wrap;}
+.auxo-billing .pos-search-field {position: relative; flex: 1; min-width: 220px;}
+.auxo-billing .pos-search-icon {position: absolute; left: 0.65rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); pointer-events: none;}
+.auxo-billing .pos-search-field input {width: 100%; padding: 0.55rem 0.75rem 0.55rem 2.15rem; border: 1px solid var(--border); border-radius: var(--radius-sm);}
+.auxo-billing .pos-topbar-button {display: inline-flex; align-items: center; gap: 0.4rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 0.55rem 0.85rem; border-radius: var(--radius-sm); font-weight: 500; font-size: 0.85rem; white-space: nowrap;}
+.auxo-billing .pos-topbar-button:hover {border-color: var(--emerald); color: var(--emerald-dark);}
+.auxo-billing .pos-topbar-button kbd, .auxo-billing .pos-statusbar kbd {font-family: inherit; font-size: 0.7rem; background: var(--emerald-pale); color: var(--emerald-dark); border-radius: 4px; padding: 0.05rem 0.35rem; margin-left: 0.15rem;}
+.auxo-billing .pos-quick-actions.quick-actions {margin-bottom: 0;}
+.auxo-billing .pos-quick-actions .quick-action-button {align-items: flex-start; gap: 0.6rem; flex: 1; min-width: 180px;}
+.auxo-billing .pos-quick-actions .quick-action-button span {display: flex; flex-direction: column; gap: 0.1rem; text-align: left;}
+.auxo-billing .pos-quick-actions .quick-action-button strong {font-size: 0.85rem;}
+.auxo-billing .pos-quick-actions .quick-action-button small {font-size: 0.72rem; font-weight: 400; color: var(--text-secondary);}
+.auxo-billing .pos-cart-count {display: inline-flex; align-items: center; justify-content: center; min-width: 1.4rem; height: 1.4rem; padding: 0 0.4rem; margin-left: 0.5rem; background: var(--emerald); color: white; border-radius: 999px; font-size: 0.75rem; font-weight: 700; vertical-align: middle;}
+.auxo-billing .cart-qty-stepper {display: inline-flex; align-items: center; gap: 0.35rem; background: var(--bg); border: 1px solid var(--border); border-radius: 999px; padding: 0.15rem 0.3rem;}
+.auxo-billing .cart-qty-stepper button {width: 1.3rem; height: 1.3rem; display: inline-flex; align-items: center; justify-content: center; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 50%; padding: 0;}
+.auxo-billing .cart-qty-stepper span {min-width: 1.1rem; text-align: center; font-weight: 600; font-size: 0.8rem;}
+.auxo-billing .cart-remove-button {display: inline-flex; align-items: center; justify-content: center; background: transparent; color: var(--danger); border: none; padding: 0.25rem;}
+.auxo-billing .cart-remove-button:hover {background: #fee2e2; border-radius: 6px;}
+.auxo-billing .pos-statusbar {display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.5rem 0.9rem; font-size: 0.78rem; color: var(--text-secondary);}
+.auxo-billing .pos-statusbar-shortcuts {flex: 1;}
+.auxo-billing .pos-status-online {display: inline-flex; align-items: center; gap: 0.3rem; font-weight: 600;}
+.auxo-billing .pos-status-online.online {color: var(--emerald-dark);}
+.auxo-billing .pos-status-online.offline {color: var(--danger);}
+.auxo-billing .pos-statusbar-printer {display: inline-flex; align-items: center; gap: 0.3rem;}
+@media (max-width: 960px) {
+  .auxo-billing .pos-statusbar-shortcuts {display: none;}
+}
+.auxo-billing .checkout-modal-overlay {position: fixed; inset: 0; background: rgba(6, 78, 59, 0.45); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 1rem;}
+.auxo-billing .checkout-modal {background: var(--surface); border-radius: var(--radius); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25); width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column;}
+.auxo-billing .checkout-modal-header {display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface);}
+.auxo-billing .checkout-steps {display: flex; gap: 1rem; font-size: 0.85rem;}
+.auxo-billing .checkout-step {color: var(--text-secondary);}
+.auxo-billing .checkout-step.active {color: var(--emerald-dark); font-weight: 700;}
+.auxo-billing .checkout-step.done {color: var(--emerald);}
+.auxo-billing .checkout-modal-close {background: none; color: var(--text-secondary); box-shadow: none; padding: 0.3rem;}
+.auxo-billing .checkout-modal-close:hover {background: var(--bg); color: var(--text);}
+.auxo-billing .checkout-modal-body {padding: 1.25rem; display: flex; flex-direction: column; gap: 0.85rem;}
+.auxo-billing .checkout-modal-body h3 {margin: 0; font-size: 1rem;}
+.auxo-billing .checkout-bill-list {list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; max-height: 220px; overflow-y: auto;}
+.auxo-billing .checkout-bill-list li {display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem;}
+.auxo-billing .checkout-bill-name {flex: 1;}
+.auxo-billing .checkout-totals {display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.9rem; border-top: 1px solid var(--border); padding-top: 0.6rem;}
+.auxo-billing .checkout-totals > div {display: flex; justify-content: space-between;}
+.auxo-billing .checkout-total-grand {font-weight: 700; font-size: 1.05rem; border-top: 1px solid var(--border); margin-top: 0.3rem; padding-top: 0.4rem; color: var(--emerald-dark);}
+.auxo-billing .payment-method-tiles {display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.6rem;}
+.auxo-billing .payment-method-tile {display: flex; flex-direction: column; align-items: center; gap: 0.4rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem 0.5rem; font-size: 0.85rem; font-weight: 500; box-shadow: none;}
+.auxo-billing .payment-method-tile.selected {background: var(--emerald-pale); border-color: var(--emerald); color: var(--emerald-dark);}
+.auxo-billing .quick-amounts {display: flex; flex-wrap: wrap; gap: 0.4rem;}
+.auxo-billing .quick-amounts button {background: var(--bg); color: var(--text); border: 1px solid var(--border); box-shadow: none; padding: 0.35rem 0.7rem; font-size: 0.8rem;}
+.auxo-billing .quick-amounts button:hover {border-color: var(--emerald); color: var(--emerald-dark);}
+.auxo-billing .checkout-modal-actions {display: flex; justify-content: space-between; gap: 0.6rem;}
+
+/* Adjustments for this app's data: the cart line also shows a per-line discount, so rows wrap
+   inside a slightly wider panel, and the screen fills the viewport height. */
+.auxo-billing {
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.auxo-billing .billing-screen {
+  grid-template-columns: minmax(0, 1fr) 400px;
+}
+
+.auxo-billing .cart-row {
+  flex-wrap: wrap;
+}
+
+.auxo-billing .cart-label {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+
+.auxo-billing .cart-row input {
+  width: 72px;
+}

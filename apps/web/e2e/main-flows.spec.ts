@@ -63,16 +63,18 @@ test.describe.serial("main flows", () => {
 
   test("makes a bill on credit for the customer", async () => {
     await page.click('button:has-text("New bill")');
-    await expect(page.locator('[class*="tileGrid"] button', { hasText: "Test Widget" })).toBeVisible();
-    await page.click('[class*="tileGrid"] button:has-text("Test Widget")');
-    await expect(page.locator('button[aria-label="Remove"]')).toHaveCount(1);
-    await page.click('button[aria-label="Remove"]');
-    await expect(page.locator('button[aria-label="Remove"]')).toHaveCount(0);
+    await expect(page.locator('.pos-product-grid button', { hasText: "Test Widget" })).toBeVisible();
+    await page.click('.pos-product-grid button:has-text("Test Widget")');
+    await expect(page.locator('button[aria-label="Remove item"]')).toHaveCount(1);
+    await page.click('button[aria-label="Remove item"]');
+    await expect(page.locator('button[aria-label="Remove item"]')).toHaveCount(0);
     await page.fill('input[placeholder*="Search products"]', "Test Widget");
     await page.click("text=Test Widget");
-    await page.click('button:has-text("CREDIT")');
     await page.selectOption("#billingCustomer", { label: "Test Customer" });
-    await page.click('button:has-text("Complete sale")');
+    await page.click('button:has-text("Proceed to Payment")');
+    await page.click('button:has-text("Continue to Payment")');
+    await page.click('.payment-method-tile:has-text("Credit")');
+    await page.click('button:has-text("Complete Sale")');
 
     await expect(page.locator('[class*="receiptTotal"]')).toBeVisible();
     await page.click('button:has-text("New bill")');

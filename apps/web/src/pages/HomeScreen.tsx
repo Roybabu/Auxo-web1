@@ -88,7 +88,7 @@ export function HomeScreen() {
   const back = () => setSubScreen("none");
   if (subScreen === "users") return <UserManagementScreen onBack={back} />;
   if (subScreen === "inventory") return <InventoryListScreen onBack={back} />;
-  if (subScreen === "billing") return <BillingScreen onBack={back} />;
+  if (subScreen === "billing") return <BillingScreen onBack={back} onNavigate={() => setSubScreen("inventory")} />;
   if (subScreen === "customers") return <CustomersScreen onBack={back} />;
   if (subScreen === "reports") return <ReportsScreen onBack={back} />;
   if (subScreen === "backup") return <BackupScreen onBack={back} />;
