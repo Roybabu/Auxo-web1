@@ -16,7 +16,7 @@ import {
   type ShopCategoryType,
   type StockUnit,
 } from "@auxo/core";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useAuth } from "../auth/AuthContext";
 import { CustomerLedgerRepository, CustomerRepository } from "../db/customerRepository";
 import { useDatabase } from "../db/DatabaseContext";
@@ -39,7 +39,10 @@ interface CartLine {
 }
 
 function rupees(m: MoneyType): string {
-  return `₹${formatMinorUnits(m)}`;
+  const [whole, paise] = formatMinorUnits(m).split(".");
+  const negative = whole!.startsWith("-");
+  const digits = negative ? whole!.slice(1) : whole!;
+  return `${negative ? "-" : ""}₹${Number(digits).toLocaleString("en-IN")}.${paise}`;
 }
 
 function newLineId(): string {
@@ -64,6 +67,7 @@ export function BillingScreen({ onBack }: { onBack: () => void }) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [browseCategory, setBrowseCategory] = useState<ShopCategoryType | "ALL">("ALL");
+  const searchRef = useRef<HTMLInputElement>(null);
 
   async function reloadHeldBills() {
     if (!db) return;
@@ -91,30 +95,18 @@ export function BillingScreen({ onBack }: { onBack: () => void }) {
     return [...seen].sort();
   }, [catalogue]);
 
-  const browseItems = useMemo(
-    () =>
-      catalogue
-        .filter(({ product }) => browseCategory === "ALL" || product.category === browseCategory)
-        .flatMap(({ product, variants }) => variants.map((variant) => ({ product, variant }))),
-    [catalogue, browseCategory],
-  );
-
-  const searchResults = useMemo(() => {
-    if (!query.trim()) return [];
+  const visibleItems = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const results: { product: ProductWithVariants["product"]; variant: ProductWithVariants["variants"][number] }[] = [];
-    for (const { product, variants } of catalogue) {
-      for (const variant of variants) {
-        if (
+    return catalogue
+      .filter(({ product }) => browseCategory === "ALL" || product.category === browseCategory)
+      .flatMap(({ product, variants }) => variants.map((variant) => ({ product, variant })))
+      .filter(
+        ({ product, variant }) =>
+          !q ||
           product.name.toLowerCase().includes(q) ||
-          (variant.barcode && variant.barcode.includes(q))
-        ) {
-          results.push({ product, variant });
-        }
-      }
-    }
-    return results.slice(0, 8);
-  }, [query, catalogue]);
+          (variant.barcode !== null && variant.barcode.toLowerCase().includes(q)),
+      );
+  }, [catalogue, browseCategory, query]);
 
   function addVariantToCart(product: ProductWithVariants["product"], variant: ProductWithVariants["variants"][number]) {
     setCart((prev) => {
@@ -139,6 +131,20 @@ export function BillingScreen({ onBack }: { onBack: () => void }) {
       ];
     });
     setQuery("");
+  }
+
+  function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Enter") return;
+    const code = query.trim();
+    if (!code) return;
+    for (const { product, variants } of catalogue) {
+      const match = variants.find((v) => v.barcode === code);
+      if (match) {
+        event.preventDefault();
+        addVariantToCart(product, match);
+        return;
+      }
+    }
   }
 
   function addCustomItem() {
@@ -214,6 +220,23 @@ export function BillingScreen({ onBack }: { onBack: () => void }) {
           roundOffEnabled: shop.roundOffEnabled,
         })
       : null;
+
+  useEffect(() => {
+    function onKeyDown(event: globalThis.KeyboardEvent) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchRef.current?.focus();
+      } else if (event.key === "F4") {
+        event.preventDefault();
+        if (!submitting && cart.length > 0 && !completed) void handleCompleteSale();
+      } else if (event.key === "F2") {
+        event.preventDefault();
+        if (cart.length > 0) void handlePark();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
 
   const tendered = Number.parseFloat(tenderedText);
   const tenderedMinor = Number.isFinite(tendered) ? money(Math.round(tendered * 100)) : null;
@@ -374,272 +397,290 @@ export function BillingScreen({ onBack }: { onBack: () => void }) {
     );
   }
 
+  const selectedCustomer = customers.find((c) => c.id === selectedCustomerId) ?? null;
+  const paymentOptions: { method: PaymentMethod; label: string }[] = [
+    { method: "CASH", label: "Cash" },
+    { method: "UPI", label: "UPI" },
+    { method: "CARD", label: "Card" },
+    { method: "ACCOUNT", label: "Credit" },
+  ];
+  const quickCash = [500, 1000, 2000, 5000];
+  const categoryLabel = (c: string) => c.replace(/_/g, " ").toLowerCase();
+
   return (
     <main className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.headerLeft}>
-          <button type="button" className={styles.backButton} onClick={onBack}>
-            ← Back
-          </button>
-          <h1 className={styles.title}>New bill</h1>
+      <header className={styles.topBar}>
+        <button type="button" className={styles.backButton} onClick={onBack}>
+          ← Back
+        </button>
+        <h1 className={styles.title}>New bill</h1>
+        <div className={styles.searchWrap}>
+          <input
+            ref={searchRef}
+            className={styles.searchInput}
+            placeholder="Search products, barcode or SKU…  (Ctrl K)"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            autoFocus
+          />
+          {query && (
+            <button type="button" className={styles.clearSearch} aria-label="Clear search" onClick={() => setQuery("")}>
+              ×
+            </button>
+          )}
         </div>
-        <div className={styles.headerActions}>
-          <button type="button" className={styles.ghostButton} onClick={addCustomItem}>
-            Custom item
-          </button>
-        </div>
+        <button type="button" className={styles.ghostButton} onClick={() => searchRef.current?.focus()}>
+          Scan
+        </button>
+        <button type="button" className={styles.ghostButton} onClick={handlePark} disabled={cart.length === 0}>
+          Hold bill <kbd>F2</kbd>
+        </button>
+        <button type="button" className={styles.ghostButton} onClick={addCustomItem}>
+          Custom item
+        </button>
       </header>
 
-      <div className={styles.searchBox}>
-        <input
-          className={styles.searchInput}
-          placeholder="Search products or scan a barcode…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          autoFocus
-        />
-        {searchResults.length > 0 && (
-          <div className={styles.searchResults}>
-            {searchResults.map(({ product, variant }) => (
-              <button
-                key={variant.id}
-                type="button"
-                className={styles.searchResultItem}
-                onClick={() => addVariantToCart(product, variant)}
-              >
-                {product.name}
-                {variant.size || variant.colour ? ` — ${[variant.size, variant.colour].filter(Boolean).join(" / ")}` : ""}
-                <div className={styles.searchResultMeta}>
-                  {rupees(variant.priceMinor)} · {variant.stockQuantity} in stock
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {!query.trim() && browseItems.length > 0 && (
-        <div className={styles.browse}>
-          <div className={styles.chipRow} role="group" aria-label="Filter by category">
+      <div className={styles.workspace}>
+        <section className={styles.catalogue} aria-label="Products">
+          <div className={styles.categoryRow} role="group" aria-label="Filter by category">
             {(["ALL", ...browseCategories] as const).map((category) => (
               <button
                 key={category}
                 type="button"
                 aria-pressed={browseCategory === category}
-                className={[styles.chip, browseCategory === category ? styles.chipActive : ""].join(" ")}
+                className={[styles.categoryChip, browseCategory === category ? styles.categoryChipActive : ""].join(" ")}
                 onClick={() => setBrowseCategory(category)}
               >
-                {category === "ALL" ? "All" : category.replace(/_/g, " ").toLowerCase()}
+                <span className={styles.categoryBadge} aria-hidden="true">
+                  {category === "ALL" ? "•" : categoryLabel(category).charAt(0).toUpperCase()}
+                </span>
+                {category === "ALL" ? "All" : categoryLabel(category)}
               </button>
             ))}
           </div>
-          <div className={styles.tileGrid}>
-            {browseItems.map(({ product, variant }) => (
-              <button
-                key={variant.id}
-                type="button"
-                className={styles.tile}
-                onClick={() => addVariantToCart(product, variant)}
-              >
-                <span className={styles.tileName}>{product.name}</span>
-                {(variant.size || variant.colour) && (
-                  <span className={styles.tileMeta}>{[variant.size, variant.colour].filter(Boolean).join(" / ")}</span>
-                )}
-                <span className={styles.tilePrice}>{rupees(variant.priceMinor)}</span>
-                <span className={styles.tileMeta}>{variant.stockQuantity} in stock</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {cart.length === 0 ? (
-        <p className={styles.emptyCart}>Search for a product or add a custom item to start a bill.</p>
-      ) : (
-        <div>
-          {cart.map((line) => (
-            <div key={line.lineId} className={styles.cartLine}>
-              <div className={styles.cartLineMain}>
-                <p className={styles.cartLineName}>
-                  {line.productName}
-                  {line.variantLabel ? ` — ${line.variantLabel}` : ""}
-                </p>
-                <p className={styles.cartLineMeta}>{rupees(line.unitPriceMinor)} each</p>
-              </div>
-              <input
-                className={styles.discountInput}
-                placeholder="disc %"
-                inputMode="decimal"
-                value={line.lineDiscountPercentText}
-                onChange={(e) => setLineDiscount(line.lineId, e.target.value)}
-              />
-              <div className={styles.qtyStepper}>
-                <button type="button" className={styles.stepperButton} onClick={() => updateQuantity(line.lineId, -1)}>
-                  −
-                </button>
-                <span className={styles.qtyValue}>{line.quantity}</span>
-                <button type="button" className={styles.stepperButton} onClick={() => updateQuantity(line.lineId, 1)}>
-                  +
-                </button>
-              </div>
-              <span className={styles.lineTotal}>
-                {rupees(money((line.unitPriceMinor as number) * line.quantity))}
-              </span>
-              <button type="button" className={styles.removeButton} aria-label="Remove" onClick={() => removeLine(line.lineId)}>
-                ×
-              </button>
+          {visibleItems.length === 0 ? (
+            <p className={styles.emptyGrid}>
+              {catalogue.length === 0 ? "No products yet. Add some under Products." : "No items match."}
+            </p>
+          ) : (
+            <div className={styles.tileGrid}>
+              {visibleItems.map(({ product, variant }) => {
+                const low = variant.lowStockThreshold !== null && variant.stockQuantity <= variant.lowStockThreshold;
+                return (
+                  <button
+                    key={variant.id}
+                    type="button"
+                    className={styles.tile}
+                    onClick={() => addVariantToCart(product, variant)}
+                  >
+                    <span className={styles.tileArt} aria-hidden="true">
+                      {product.name.charAt(0).toUpperCase()}
+                    </span>
+                    <span className={styles.tileName}>{product.name}</span>
+                    {(variant.size || variant.colour) && (
+                      <span className={styles.tileMeta}>{[variant.size, variant.colour].filter(Boolean).join(" / ")}</span>
+                    )}
+                    <span className={styles.tileFoot}>
+                      <span className={styles.tilePrice}>{rupees(variant.priceMinor)}</span>
+                      <span className={styles.tileStock}>
+                        {low ? "Low stock" : `${variant.stockQuantity} in stock`}
+                      </span>
+                    </span>
+                    <span className={styles.tileAdd} aria-hidden="true">+</span>
+                  </button>
+                );
+              })}
             </div>
-          ))}
-        </div>
-      )}
+          )}
+        </section>
 
-      {cart.length > 0 && calculation && (
-        <div className={styles.summary}>
-          <div className={styles.discountRow}>
+        <aside className={styles.cart} aria-label="Current bill">
+          <div className={styles.customerRow}>
             <select
-              id="billDiscountKind"
-              className={styles.discountKindSelect}
-              value={billDiscountKind}
-              onChange={(e) => setBillDiscountKind(e.target.value as typeof billDiscountKind)}
+              id="billingCustomer"
+              className={styles.customerSelect}
+              value={selectedCustomerId ?? ""}
+              onChange={(e) => setSelectedCustomerId(e.target.value || null)}
+              aria-label="Customer"
             >
-              <option value="NONE">No bill discount</option>
-              <option value="AMOUNT">Discount ₹</option>
-              <option value="PERCENT">Discount %</option>
+              <option value="">Walk-in customer</option>
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
             </select>
-            {billDiscountKind !== "NONE" && (
-              <input
-                className={styles.discountValueInput}
-                inputMode="decimal"
-                value={billDiscountValue}
-                onChange={(e) => setBillDiscountValue(e.target.value)}
-              />
+          </div>
+
+          <div className={styles.lines}>
+            {cart.length === 0 ? (
+              <p className={styles.emptyCart}>Tap a product to add it, or search and press Enter on a barcode.</p>
+            ) : (
+              cart.map((line) => (
+                <div key={line.lineId} className={styles.cartLine}>
+                  <div className={styles.cartLineMain}>
+                    <p className={styles.cartLineName}>{line.productName}</p>
+                    {line.variantLabel && <p className={styles.cartLineMeta}>{line.variantLabel}</p>}
+                    <p className={styles.cartLineMeta}>{rupees(line.unitPriceMinor)} each</p>
+                  </div>
+                  <input
+                    className={styles.lineDiscount}
+                    placeholder="disc %"
+                    inputMode="decimal"
+                    value={line.lineDiscountPercentText}
+                    onChange={(e) => setLineDiscount(line.lineId, e.target.value)}
+                    aria-label="Line discount percent"
+                  />
+                  <div className={styles.qtyStepper}>
+                    <button type="button" className={styles.stepperButton} aria-label="Decrease" onClick={() => updateQuantity(line.lineId, -1)}>
+                      −
+                    </button>
+                    <span className={styles.qtyValue}>{line.quantity}</span>
+                    <button type="button" className={styles.stepperButton} aria-label="Increase" onClick={() => updateQuantity(line.lineId, 1)}>
+                      +
+                    </button>
+                  </div>
+                  <span className={styles.lineTotal}>{rupees(money((line.unitPriceMinor as number) * line.quantity))}</span>
+                  <button type="button" className={styles.removeButton} aria-label="Remove" onClick={() => removeLine(line.lineId)}>
+                    ×
+                  </button>
+                </div>
+              ))
             )}
           </div>
 
-          <div className={styles.summaryRow}>
-            <span>Subtotal</span>
-            <span>{rupees(calculation.subtotalMinor)}</span>
-          </div>
-          {calculation.lineDiscountTotalMinor + calculation.billDiscountTotalMinor > 0 && (
-            <div className={styles.summaryRow}>
-              <span>Discount</span>
-              <span>−{rupees(money(calculation.lineDiscountTotalMinor + calculation.billDiscountTotalMinor))}</span>
+          {cart.length > 0 && calculation && (
+            <div className={styles.totals}>
+              <div className={styles.summaryRow}>
+                <span>Subtotal</span>
+                <span>{rupees(calculation.subtotalMinor)}</span>
+              </div>
+              <div className={styles.discountRow}>
+                <select
+                  id="billDiscountKind"
+                  className={styles.discountKindSelect}
+                  value={billDiscountKind}
+                  onChange={(e) => setBillDiscountKind(e.target.value as typeof billDiscountKind)}
+                  aria-label="Bill discount type"
+                >
+                  <option value="NONE">No discount</option>
+                  <option value="AMOUNT">Discount ₹</option>
+                  <option value="PERCENT">Discount %</option>
+                </select>
+                {billDiscountKind !== "NONE" && (
+                  <input
+                    className={styles.discountValueInput}
+                    inputMode="decimal"
+                    value={billDiscountValue}
+                    onChange={(e) => setBillDiscountValue(e.target.value)}
+                    aria-label="Discount value"
+                  />
+                )}
+                <span className={styles.discountAmount}>
+                  {calculation.lineDiscountTotalMinor + calculation.billDiscountTotalMinor > 0
+                    ? `−${rupees(money(calculation.lineDiscountTotalMinor + calculation.billDiscountTotalMinor))}`
+                    : ""}
+                </span>
+              </div>
+              {shop?.gstRegistered && (
+                <div className={styles.summaryRow}>
+                  <span>Tax{shop.interState ? " (IGST)" : " (GST)"}</span>
+                  <span>
+                    {rupees(money(calculation.cgstMinor + calculation.sgstMinor + calculation.igstMinor))}
+                  </span>
+                </div>
+              )}
+              {calculation.roundOffMinor !== 0 && (
+                <div className={styles.summaryRow}>
+                  <span>Round off</span>
+                  <span>{rupees(calculation.roundOffMinor)}</span>
+                </div>
+              )}
+              <div className={styles.grandTotalRow}>
+                <span>Total</span>
+                <span className={styles.grandTotalValue}>{rupees(calculation.grandTotalMinor)}</span>
+              </div>
             </div>
           )}
-          {shop?.gstRegistered && (
+
+          {cart.length > 0 && calculation && (
             <>
-              <div className={styles.summaryRow}>
-                <span>Taxable</span>
-                <span>{rupees(calculation.taxableMinor)}</span>
+              <div className={styles.paymentMethods} role="group" aria-label="Payment method">
+                {paymentOptions.map(({ method, label }) => (
+                  <button
+                    key={method}
+                    type="button"
+                    aria-pressed={paymentMethod === method}
+                    className={[styles.paymentMethodButton, paymentMethod === method ? styles.paymentMethodButtonSelected : ""].join(" ")}
+                    onClick={() => setPaymentMethod(method)}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
-              {shop.interState ? (
-                <div className={styles.summaryRow}>
-                  <span>IGST</span>
-                  <span>{rupees(calculation.igstMinor)}</span>
+
+              {paymentMethod === "CASH" && (
+                <div className={styles.cashRow}>
+                  {quickCash.map((amount) => (
+                    <button
+                      key={amount}
+                      type="button"
+                      className={styles.quickCash}
+                      onClick={() => setTenderedText(String(amount))}
+                    >
+                      ₹{amount.toLocaleString("en-IN")}
+                    </button>
+                  ))}
+                  <input
+                    className={styles.tenderedInput}
+                    placeholder="Custom ₹"
+                    inputMode="decimal"
+                    value={tenderedText}
+                    onChange={(e) => setTenderedText(e.target.value)}
+                    aria-label="Amount tendered"
+                  />
+                  {changeMinor !== null && <span className={styles.change}>Change {rupees(changeMinor)}</span>}
                 </div>
-              ) : (
-                <>
-                  <div className={styles.summaryRow}>
-                    <span>CGST</span>
-                    <span>{rupees(calculation.cgstMinor)}</span>
-                  </div>
-                  <div className={styles.summaryRow}>
-                    <span>SGST</span>
-                    <span>{rupees(calculation.sgstMinor)}</span>
-                  </div>
-                </>
               )}
+
+              {paymentMethod === "ACCOUNT" && (
+                <p className={styles.hint}>
+                  {selectedCustomer ? `Billed to ${selectedCustomer.name}'s account.` : "Pick a customer above to bill to their account."}
+                </p>
+              )}
+
+              {error && <p className={styles.error}>{error}</p>}
+
+              <button type="button" className={styles.checkout} disabled={submitting} onClick={handleCompleteSale}>
+                <span>{submitting ? "Completing…" : "Complete sale"}</span>
+                <kbd>F4</kbd>
+              </button>
+              <button type="button" className={styles.clearCart} onClick={() => setCart([])}>
+                Clear cart
+              </button>
             </>
           )}
-          {calculation.roundOffMinor !== 0 && (
-            <div className={styles.summaryRow}>
-              <span>Round off</span>
-              <span>{rupees(calculation.roundOffMinor)}</span>
+
+          {heldBills.length > 0 && cart.length === 0 && (
+            <div className={styles.held}>
+              <p className={styles.heldTitle}>Held bills</p>
+              {heldBills.map((bill) => (
+                <div key={bill.id} className={styles.heldRow}>
+                  <span>
+                    {bill.itemCount} item{bill.itemCount > 1 ? "s" : ""}
+                  </span>
+                  <span className={styles.lineTotal}>{rupees(bill.totalMinor)}</span>
+                  <button type="button" className={styles.ghostButton} onClick={() => resumeHeldBill(bill.id, bill.payload)}>
+                    Resume
+                  </button>
+                </div>
+              ))}
             </div>
           )}
-
-          <div className={styles.grandTotalRow}>
-            <span className={styles.grandTotalLabel}>Total</span>
-            <span className={styles.grandTotalValue}>{rupees(calculation.grandTotalMinor)}</span>
-          </div>
-
-          <div className={styles.paymentMethods}>
-            {(["CASH", "UPI", "CARD", "ACCOUNT"] as PaymentMethod[]).map((method) => (
-              <button
-                key={method}
-                type="button"
-                className={[styles.paymentMethodButton, paymentMethod === method ? styles.paymentMethodButtonSelected : ""].join(" ")}
-                onClick={() => setPaymentMethod(method)}
-              >
-                {method === "ACCOUNT" ? "CREDIT" : method}
-              </button>
-            ))}
-          </div>
-
-          {paymentMethod === "CASH" && (
-            <div className={styles.discountRow}>
-              <input
-                className={styles.discountValueInput}
-                placeholder="Tendered ₹"
-                inputMode="decimal"
-                value={tenderedText}
-                onChange={(e) => setTenderedText(e.target.value)}
-              />
-              {changeMinor !== null && <span>Change: {rupees(changeMinor)}</span>}
-            </div>
-          )}
-
-          {paymentMethod === "ACCOUNT" && (
-            <div className={styles.discountRow}>
-              <select
-                id="billingCustomer"
-                className={styles.discountKindSelect}
-                value={selectedCustomerId ?? ""}
-                onChange={(e) => setSelectedCustomerId(e.target.value || null)}
-              >
-                <option value="">Select a customer…</option>
-                {customers.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {error && <p className={styles.error}>{error}</p>}
-
-          <div className={styles.actionRow}>
-            <button type="button" className={styles.secondaryButton} onClick={handlePark}>
-              Park bill
-            </button>
-            <button type="button" className={styles.primaryButton} disabled={submitting} onClick={handleCompleteSale}>
-              {submitting ? "Completing…" : "Complete sale"}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {heldBills.length > 0 && cart.length === 0 && (
-        <div className={styles.summary}>
-          <p className={styles.cartLineMeta}>Parked bills</p>
-          {heldBills.map((bill) => (
-            <div key={bill.id} className={styles.cartLine}>
-              <div className={styles.cartLineMain}>
-                <p className={styles.cartLineName}>{bill.itemCount} item{bill.itemCount > 1 ? "s" : ""}</p>
-              </div>
-              <span className={styles.lineTotal}>{rupees(bill.totalMinor)}</span>
-              <button
-                type="button"
-                className={styles.ghostButton}
-                onClick={() => resumeHeldBill(bill.id, bill.payload)}
-              >
-                Resume
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+        </aside>
+      </div>
     </main>
   );
 }
