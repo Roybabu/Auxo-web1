@@ -337,3 +337,77 @@
   margin: var(--space-4) 0;
   font-variant-numeric: tabular-nums;
 }
+
+.browse {
+  margin-top: var(--space-4);
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.chip {
+  appearance: none;
+  border: var(--border-width-thin) solid var(--color-border-strong);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  text-transform: capitalize;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  min-height: var(--touch-target-min);
+  cursor: pointer;
+}
+
+.chipActive {
+  background: var(--color-surface-2);
+  color: var(--color-text-primary);
+  border-color: var(--color-text-secondary);
+}
+
+.tileGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-3);
+}
+
+.tile {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  min-height: 96px;
+  padding: var(--space-4);
+  text-align: left;
+  background: var(--color-surface-1);
+  color: var(--color-text-primary);
+  border: var(--border-width-thin) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+}
+
+.tile:hover {
+  background: var(--color-surface-2);
+  border-color: var(--color-border-strong);
+}
+
+.tileName {
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-sm);
+}
+
+.tileMeta {
+  font-size: var(--text-xs);
+  color: var(--color-text-tertiary);
+}
+
+.tilePrice {
+  margin-top: auto;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+}

@@ -13,6 +13,7 @@ import {
   type GstRule,
   type Money as MoneyType,
   type PaymentMethod,
+  type ShopCategoryType,
   type StockUnit,
 } from "@auxo/core";
 import { useEffect, useMemo, useState } from "react";
@@ -62,6 +63,7 @@ export function BillingScreen({ onBack }: { onBack: () => void }) {
   const [heldBills, setHeldBills] = useState<Awaited<ReturnType<HeldBillRepository["listActive"]>>>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [browseCategory, setBrowseCategory] = useState<ShopCategoryType | "ALL">("ALL");
 
   async function reloadHeldBills() {
     if (!db) return;
@@ -82,6 +84,20 @@ export function BillingScreen({ onBack }: { onBack: () => void }) {
     await new HeldBillRepository(db).remove(id);
     await reloadHeldBills();
   }
+
+  const browseCategories = useMemo(() => {
+    const seen = new Set<ShopCategoryType>();
+    for (const { product } of catalogue) seen.add(product.category);
+    return [...seen].sort();
+  }, [catalogue]);
+
+  const browseItems = useMemo(
+    () =>
+      catalogue
+        .filter(({ product }) => browseCategory === "ALL" || product.category === browseCategory)
+        .flatMap(({ product, variants }) => variants.map((variant) => ({ product, variant }))),
+    [catalogue, browseCategory],
+  );
 
   const searchResults = useMemo(() => {
     if (!query.trim()) return [];
@@ -401,6 +417,41 @@ export function BillingScreen({ onBack }: { onBack: () => void }) {
           </div>
         )}
       </div>
+
+      {!query.trim() && browseItems.length > 0 && (
+        <div className={styles.browse}>
+          <div className={styles.chipRow} role="group" aria-label="Filter by category">
+            {(["ALL", ...browseCategories] as const).map((category) => (
+              <button
+                key={category}
+                type="button"
+                aria-pressed={browseCategory === category}
+                className={[styles.chip, browseCategory === category ? styles.chipActive : ""].join(" ")}
+                onClick={() => setBrowseCategory(category)}
+              >
+                {category === "ALL" ? "All" : category.replace(/_/g, " ").toLowerCase()}
+              </button>
+            ))}
+          </div>
+          <div className={styles.tileGrid}>
+            {browseItems.map(({ product, variant }) => (
+              <button
+                key={variant.id}
+                type="button"
+                className={styles.tile}
+                onClick={() => addVariantToCart(product, variant)}
+              >
+                <span className={styles.tileName}>{product.name}</span>
+                {(variant.size || variant.colour) && (
+                  <span className={styles.tileMeta}>{[variant.size, variant.colour].filter(Boolean).join(" / ")}</span>
+                )}
+                <span className={styles.tilePrice}>{rupees(variant.priceMinor)}</span>
+                <span className={styles.tileMeta}>{variant.stockQuantity} in stock</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {cart.length === 0 ? (
         <p className={styles.emptyCart}>Search for a product or add a custom item to start a bill.</p>
